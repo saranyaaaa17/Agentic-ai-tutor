@@ -64,6 +64,22 @@ export const loadAssessmentState = (key) => {
     }
 };
 
+
 export const clearAssessmentState = (key) => {
     sessionStorage.removeItem(key);
+};
+
+// Calculate Mastery Score
+// Uses weighted average: 70% previous + 30% current (if correct)
+// Decreases if wrong (by retaining only 70% of previous)
+export const updateMasteryScore = (previousMastery, isCorrect, attempts = 0) => {
+    let newMastery = previousMastery * 0.7 + (isCorrect ? 0.3 : 0.0);
+    
+    // Ensure boundaries
+    newMastery = Math.max(0, Math.min(1, newMastery));
+    
+    return {
+        mastery: Math.round(newMastery * 100) / 100,
+        attempts: attempts + 1
+    };
 };

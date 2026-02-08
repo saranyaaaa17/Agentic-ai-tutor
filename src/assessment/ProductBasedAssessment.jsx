@@ -49,7 +49,7 @@ const ProductBasedAssessment = () => {
         // We will generate questions when Start Test is clicked to ensure freshness if desired, 
         // OR pre-generate here. Let's pre-generate structure to be ready.
         const newDB = {};
-        const totalQuestions = 60;
+        const totalQuestions = 10;
         Object.keys(config.domains).forEach(domain => {
             const weight = config.domains[domain].weight || 0;
             if (weight > 0) {
@@ -97,7 +97,7 @@ const ProductBasedAssessment = () => {
     // If questions were not generated correctly, regenerate
     if (Object.keys(questionsDB).length === 0) {
          const newDB = {};
-         const totalQuestions = 60;
+         const totalQuestions = 10;
         Object.keys(config.domains).forEach(domain => {
             const weight = config.domains[domain].weight || 0;
             if (weight > 0) {

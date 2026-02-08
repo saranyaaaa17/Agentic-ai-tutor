@@ -49,7 +49,10 @@ const FloatingAssistant = () => {
               <div className="absolute inset-0 rounded-full border border-cyan-500/30 group-hover/btn:border-cyan-400/60 transition-colors" />
               
               {/* Inner Core */}
-              <div className="relative w-11 h-11 bg-slate-900 rounded-full border border-cyan-500/50 flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(6,182,212,0.3)] bg-linear-to-b from-slate-800 to-slate-950">
+              <div 
+                className="relative w-11 h-11 bg-slate-900 rounded-full border border-cyan-500/50 flex items-center justify-center overflow-hidden shadow-[0_0_15px_rgba(6,182,212,0.3)] bg-linear-to-b from-slate-800 to-slate-950 transform-3d"
+                style={{ transform: "rotateX(15deg) rotateY(-10deg)" }}
+              >
                  
                  {/* Robot Icon */}
                  <svg className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,22 +72,25 @@ const FloatingAssistant = () => {
       <AnimatePresence>
         {mode === "expanded" && (
           <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMode("compact")}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            />
+            {/* Main Panel Wrapper (Centered Overlay) */}
+            <div className="fixed inset-0 z-50 min-h-screen flex items-center justify-center p-4">
+              
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMode("compact")}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              />
 
-            {/* Main Panel */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed inset-4 md:inset-auto md:bottom-8 md:right-8 md:w-[800px] md:h-[600px] bg-[#050B14] border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] z-50 flex overflow-hidden ring-1 ring-white/10"
-            >
+              {/* Main Panel (Inner Container) */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative z-10 w-[90%] max-w-7xl h-[85vh] flex rounded-3xl overflow-hidden bg-[#050B14] border border-cyan-500/30 shadow-2xl ring-1 ring-white/10"
+              >
               
               {/* Decorative Background Elements */}
               <div className="absolute inset-0 pointer-events-none">
@@ -123,8 +129,8 @@ const FloatingAssistant = () => {
               </div>
 
               {/* Main Chat Area */}
-              <div className="flex-1 flex flex-col relative z-10 bg-transparent">
-                  <div className="h-14 border-b border-white/5 flex items-center justify-between px-6 bg-slate-900/20">
+              <div className="flex-1 flex flex-col relative z-10 bg-transparent w-full">
+                  <div className="h-14 border-b border-white/5 flex items-center justify-between px-6 bg-slate-900/20 shrink-0">
                       <span className="text-sm font-medium text-slate-300">Diagnostic Session</span>
                       <button onClick={() => setMode("compact")} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition">
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -133,12 +139,13 @@ const FloatingAssistant = () => {
                       </button>
                   </div>
                   
-                  <div className="flex-1 overflow-hidden">
+                  <div className="flex-1 overflow-hidden w-full relative">
                       <AssistantFlow user={user} profile={profile} />
                   </div>
               </div>
 
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>

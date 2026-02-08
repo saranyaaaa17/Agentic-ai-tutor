@@ -46,7 +46,7 @@ const ServiceBasedAssessment = () => {
         const newDB = {};
         // Default domains for Service based: quant, logical, verbal, planning, cs
         const domains = ["quant", "logical", "verbal", "programming", "cs"];
-        const countPerDomain = Math.floor(60 / domains.length); // 12 questions each
+        const countPerDomain = Math.floor(10 / domains.length); // 12 questions each
         domains.forEach(domain => {
              newDB[domain] = generateAssessment(domain, countPerDomain);
         });
@@ -92,7 +92,7 @@ const ServiceBasedAssessment = () => {
     if (Object.keys(questionsDB).length === 0) {
         const newDB = {};
         const domains = ["quant", "logical", "verbal", "programming", "cs"];
-        const countPerDomain = Math.floor(60 / domains.length);
+        const countPerDomain = Math.floor(10 / domains.length);
         domains.forEach(domain => {
              newDB[domain] = generateAssessment(domain, countPerDomain);
         });

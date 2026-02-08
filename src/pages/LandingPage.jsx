@@ -70,9 +70,6 @@ const LandingPage = () => {
       {/* Footer */}
       <Footer />
 
-      {/* Floating AI Assistant */}
-      <FloatingAssistant />
-
     </div>
   );
 };

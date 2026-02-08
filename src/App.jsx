@@ -13,6 +13,8 @@ import ProductBasedAssessment from "./assessment/ProductBasedAssessment";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 
+import FloatingAssistant from "./components/assistant/FloatingAssistant";
+
 function App() {
   return (
     <BrowserRouter>
@@ -32,6 +34,9 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
+      
+      {/* Global AI Assistant */}
+      <FloatingAssistant />
     </BrowserRouter>
   );
 }

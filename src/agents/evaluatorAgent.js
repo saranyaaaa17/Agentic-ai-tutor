@@ -1,25 +1,37 @@
-export const evaluateAnswer = (
-  concept,
-  isCorrect,
-  learnerState
-) => {
-
-  const data = learnerState.concepts[concept];
-
-  data.attempts += 1;
-
-  if (isCorrect) {
-    data.correct += 1;
+/**
+ * Evaluator Agent
+ * Responsibility: Pure function to evaluate answers.
+ * No side effects. No access to learner state.
+ *
+ * @param {string} userAnswer
+ * @param {string} correctAnswer
+ * @returns {object} { isCorrect, errorType, feedback }
+ */
+export const evaluateAnswer = (userAnswer, correctAnswer) => {
+  if (!userAnswer) {
+    return {
+      isCorrect: false,
+      errorType: "invalid_input",
+      feedback: "Please provide an answer."
+    };
   }
 
-  // Mastery update formula
-  data.mastery =
-    0.7 * data.mastery +
-    0.3 * (data.correct / data.attempts);
+  // Normalize: trim, lowercase if string
+  const normUser = String(userAnswer).trim().toLowerCase();
+  const normCorrect = String(correctAnswer).trim().toLowerCase();
+  const isCorrect = normUser === normCorrect;
 
-  // Level classification
-  if (data.mastery < 0.4) return "Beginner";
-  if (data.mastery < 0.75) return "Intermediate";
-
-  return "Advanced";
+  if (isCorrect) {
+    return {
+      isCorrect: true,
+      errorType: "none",
+      feedback: "Correct! Well done."
+    };
+  } else {
+    return {
+      isCorrect: false,
+      errorType: "conceptual_error", 
+      feedback: `Incorrect. The correct answer is: ${correctAnswer}`
+    };
+  }
 };

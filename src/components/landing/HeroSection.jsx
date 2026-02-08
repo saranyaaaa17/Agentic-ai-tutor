@@ -55,7 +55,12 @@ const HeroSection = () => {
           className="relative hidden md:flex justify-center items-center h-[500px]"
       >
            {/* Abstract Agent UI representation */}
-           <div className="relative w-full h-full flex items-center justify-center">
+           <div className="relative w-full h-full flex items-center justify-center perspective-[1000px]">
+              <motion.div 
+                   animate={{ rotateX: 15, rotateY: 5 }}
+                   transition={{ duration: 10, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                   className="relative w-full h-full flex items-center justify-center transform-3d"
+              >
               {/* Rings */}
               <motion.div 
                   animate={{ rotate: 360 }}
@@ -145,6 +150,7 @@ const HeroSection = () => {
                       <div className="w-2 h-2 rounded-full bg-blue-500" />
                   </div>
                   <div className="text-[10px] text-slate-500 font-mono mt-2">Retrieving docs...</div>
+              </motion.div>
               </motion.div>
            </div>
       </motion.div>

@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import { questionBank } from "../data/questionBank";
 import { generateAssessment, saveAssessmentState, loadAssessmentState, clearAssessmentState } from "../utils/assessmentUtils";
-import { getRandomFact } from "../data/learningFacts";
+
 
 const ProblemSolvingAssessment = () => {
   const { user } = useAuth();
@@ -21,7 +21,7 @@ const ProblemSolvingAssessment = () => {
   const [agentStatus, setAgentStatus] = useState("");
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState("");
-  const [fact, setFact] = useState("");
+
   const isLoaded = useRef(false);
 
   // Map domain param to questionBank keys
@@ -52,7 +52,7 @@ const ProblemSolvingAssessment = () => {
         const newQuestions = generateAssessment(bankDomain, 10);
         setQuestions(newQuestions);
     }
-    setFact(getRandomFact());
+
   }, [domain, assessmentId]);
 
   useEffect(() => {
@@ -135,6 +135,15 @@ const ProblemSolvingAssessment = () => {
     }
   };
 
+  const getCoreSkills = () => {
+    switch(domain) {
+      case "dsa-problems": return ["Complexity", "Data Structures", "Recursion"];
+      case "sql-problems": return ["Joins", "Aggregates", "Subqueries"];
+      case "logic-problems": return ["Patterns", "Series", "Deduction"];
+      default: return ["Algorithms", "Syntax", "Debugging"];
+    }
+  };
+
   const domainTitle = getDomainTitle();
 
   return (
@@ -202,17 +211,21 @@ const ProblemSolvingAssessment = () => {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-sm">
-                <div className="bg-slate-800 p-6 rounded-2xl border border-white/10 hover:border-green-500/30 transition-colors flex flex-col justify-center">
-                  <span className="block text-green-400 font-bold text-xs uppercase mb-2 tracking-wider">Did You Know?</span> 
-                  <span className="text-slate-300 text-xs italic leading-relaxed">"{fact}"</span>
+                <div className="bg-slate-800 p-6 rounded-2xl border border-white/10 hover:border-green-500/30 transition-colors flex flex-col h-full justify-center items-center">
+                  <span className="block text-green-400 font-bold text-xs uppercase mb-3 tracking-wider">Core Skills</span> 
+                  <div className="flex flex-wrap gap-2 justify-center">
+                      {getCoreSkills().map((skill, i) => (
+                          <span key={i} className="px-3 py-1.5 bg-green-500/10 text-green-300 rounded-lg text-xs font-bold border border-green-500/20">{skill}</span>
+                      ))}
+                  </div>
                 </div>
-               <div className="bg-slate-800 p-6 rounded-2xl border border-white/10 hover:border-green-500/30 transition-colors">
-                 <span className="block text-purple-400 font-bold text-3xl mb-2">Code</span> 
-                 <span className="text-slate-400 font-medium">Format</span>
+               <div className="bg-slate-800 p-6 rounded-2xl border border-white/10 hover:border-green-500/30 transition-colors flex flex-col h-full justify-center">
+                 <span className="block text-purple-400 font-bold text-3xl mb-1">Code</span> 
+                 <span className="text-slate-400 font-medium text-xs uppercase tracking-wider">Format</span>
                </div>
-               <div className="bg-slate-800 p-6 rounded-2xl border border-white/10 hover:border-green-500/30 transition-colors">
-                 <span className="block text-emerald-400 font-bold text-3xl mb-2">AI</span> 
-                 <span className="text-slate-400 font-medium">Analysis</span>
+               <div className="bg-slate-800 p-6 rounded-2xl border border-white/10 hover:border-green-500/30 transition-colors flex flex-col h-full justify-center">
+                 <span className="block text-emerald-400 font-bold text-3xl mb-1">AI</span> 
+                 <span className="text-slate-400 font-medium text-xs uppercase tracking-wider">Analysis</span>
                </div>
             </div>
             
@@ -243,9 +256,37 @@ const ProblemSolvingAssessment = () => {
              </div>
 
             <div className="flex justify-between items-center mb-8 mt-2">
-               <span className="text-slate-400 font-mono text-sm tracking-widest uppercase">
-                 Challenge {currentQuestionIndex + 1} / {questions.length}
-               </span>
+               <div className="flex flex-col">
+                   <span className="text-slate-400 font-mono text-sm tracking-widest uppercase">
+                     Challenge {currentQuestionIndex + 1} / {questions.length}
+                   </span>
+                   {/* Live Mastery Stats */}
+                   <div className="flex gap-3 mt-2 text-xs font-mono font-bold">
+                       {(() => {
+                           const answeredCount = Object.keys(answers).filter(key => parseInt(key) < currentQuestionIndex).length;
+                           if (answeredCount === 0) return <span className="text-slate-600">Waiting for data...</span>;
+
+                           let correct = 0;
+                           Object.entries(answers).forEach(([idx, ans]) => {
+                               if (parseInt(idx) < currentQuestionIndex && questions[idx]?.ans === ans) correct++;
+                           });
+                           
+                           const accuracy = (correct / answeredCount) || 0;
+                           
+                           return (
+                               <>
+                                <span className={accuracy < 0.5 ? "text-yellow-400" : "text-green-400"}>
+                                    Accuracy: {Math.round(accuracy * 100)}%
+                                </span>
+                                <span className="text-slate-600">|</span>
+                                <span className={correct > (answeredCount / 2) ? "text-green-400" : "text-slate-400"}>
+                                    {correct}/{answeredCount} Solved
+                                </span>
+                               </>
+                           )
+                       })()}
+                   </div>
+               </div>
                <span className="text-slate-400 font-mono text-xs uppercase border border-white/10 px-3 py-1 rounded-full bg-white/5">
                  {domainTitle}
                </span>
@@ -279,7 +320,18 @@ const ProblemSolvingAssessment = () => {
               ))}
             </div>
 
-            <div className="flex justify-end pt-6 border-t border-white/10">
+            <div className="flex justify-between pt-6 border-t border-white/10">
+              <button
+                onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                disabled={currentQuestionIndex === 0}
+                className={`px-6 py-4 rounded-xl font-bold text-lg transition-all
+                  ${currentQuestionIndex === 0
+                    ? "text-slate-600 cursor-not-allowed" 
+                    : "text-slate-400 hover:text-white hover:bg-white/5"}`}
+              >
+                Previous
+              </button>
+
               <button
                 onClick={nextQuestion}
                 disabled={!answers[currentQuestionIndex]}
@@ -371,7 +423,7 @@ const ProblemSolvingAssessment = () => {
                       onClick={() => {
                         clearAssessmentState(assessmentId);
                          const bankDomain = getQuestionBankDomain(domain);
-                         const newQuestions = generateAssessment(bankDomain, 110);
+                         const newQuestions = generateAssessment(bankDomain, 10);
                          setQuestions(newQuestions);
                          setAnswers({});
                          setCurrentQuestionIndex(0);
@@ -495,13 +547,7 @@ const ProblemSolvingAssessment = () => {
 
              <div className="mt-12 flex justify-center flex-col items-center gap-4">
                 
-                {/* Did You Know Stat */}
-                <div className="bg-green-500/10 border border-green-500/20 px-6 py-4 rounded-xl max-w-2xl mb-6">
-                    <p className="text-green-200 text-sm font-bold uppercase mb-2 tracking-wider">Did You Know?</p>
-                    <p className="text-green-100 text-sm font-medium italic leading-relaxed">
-                        "{fact}"
-                    </p>
-                </div>
+
 
                 <div className="flex gap-4">
                     <button
