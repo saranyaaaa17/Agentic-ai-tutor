@@ -19,8 +19,9 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for changes
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_, session) => {
+      (_event, session) => {
         setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 
@@ -29,11 +30,47 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const signUp = (email, password) => {
+    return supabase.auth.signUp({ email, password });
+  };
+
+  const signIn = (email, password) => {
+    return supabase.auth.signInWithPassword({ email, password });
+  };
+
+  const signInWithGoogle = () => {
+    return supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+  };
+  
+  const signInWithOtp = (phone) => {
+     return supabase.auth.signInWithOtp({ phone });
+  };
+  
+  const verifyOtp = (phone, token) => {
+      return supabase.auth.verifyOtp({ phone, token, type: 'sms' });
+  };
+
+  const signOut = () => {
+    return supabase.auth.signOut();
+  };
+
+  const value = {
+    user,
+    loading,
+    signUp,
+    signIn,
+    signInWithGoogle,
+    signInWithOtp,
+    verifyOtp,
+    signOut,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);

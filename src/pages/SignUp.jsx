@@ -1,18 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
 import BackButton from "../components/ui/BackButton";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { user, signInWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Password Validation
+  const validations = {
+    minLength: password.length >= 8,
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    hasLetter: /[a-zA-Z]/.test(password),
+  };
+  
+  const isPasswordValid = Object.values(validations).every(Boolean);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
   const handleSignUp = async (e) => {
     e.preventDefault();
+    if (!isPasswordValid) return;
+
     setLoading(true);
     setError(null);
 
@@ -32,12 +53,7 @@ const SignUp = () => {
   const handleGoogleSignUp = async () => {
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
+    const { error } = await signInWithGoogle();
     if (error) setError(error.message);
     setLoading(false);
   };
@@ -70,11 +86,11 @@ const SignUp = () => {
                   </svg>
                 </div>
                 <h1 className="text-5xl font-black mb-6 tracking-tight leading-tight">
-                  Join the <br/>
-                  <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500">Revolution.</span>
+                  Start Your <br/>
+                  <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500">Journey.</span>
                 </h1>
                 <p className="text-slate-400 text-lg leading-relaxed mb-8">
-                  Create your profile to unlock personalized learning paths, AI-driven assessments, and real-time career analytics.
+                  Create your profile to unlock personalized learning paths, AI-powered lessons, and clear progress tracking.
                 </p>
                 
                 <div className="space-y-4">
@@ -82,19 +98,19 @@ const SignUp = () => {
                       <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
                         <svg className="w-3 h-3 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                       </div>
-                      <span>Personalized AI Curriculum</span>
+                      <span>Personalized Lessons</span>
                    </div>
                    <div className="flex items-center gap-4 text-slate-300">
                       <div className="w-6 h-6 rounded-full bg-pink-500/20 flex items-center justify-center border border-pink-500/30">
                         <svg className="w-3 h-3 text-pink-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                       </div>
-                      <span>Simulated Interview Environments</span>
+                      <span>Real Interview Prep</span>
                    </div>
                    <div className="flex items-center gap-4 text-slate-300">
                       <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
                         <svg className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                       </div>
-                      <span>Real-time Performance Metrics</span>
+                      <span>Track Your Progress</span>
                    </div>
                 </div>
              </motion.div>
@@ -147,24 +163,62 @@ const SignUp = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-600"
-                        placeholder="agent@example.com"
+                        placeholder="you@example.com"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-600"
-                        placeholder="••••••••"
-                      />
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className={`w-full bg-slate-950 border ${!password ? 'border-slate-700' : isPasswordValid ? 'border-green-500/50' : 'border-red-500/50'} rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 transition-all placeholder:text-slate-600 pr-10`}
+                          placeholder="••••••••"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                        >
+                          {showPassword ? (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Password Strength Checklist */}
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <div className={`flex items-center gap-2 text-xs font-medium ${validations.minLength ? 'text-green-400' : 'text-slate-500'}`}>
+                           <div className={`w-1.5 h-1.5 rounded-full ${validations.minLength ? 'bg-green-400' : 'bg-slate-600'}`} />
+                           Min 8 Characters
+                        </div>
+                        <div className={`flex items-center gap-2 text-xs font-medium ${validations.hasLetter ? 'text-green-400' : 'text-slate-500'}`}>
+                           <div className={`w-1.5 h-1.5 rounded-full ${validations.hasLetter ? 'bg-green-400' : 'bg-slate-600'}`} />
+                           Contains Letter
+                        </div>
+                         <div className={`flex items-center gap-2 text-xs font-medium ${validations.hasNumber ? 'text-green-400' : 'text-slate-500'}`}>
+                           <div className={`w-1.5 h-1.5 rounded-full ${validations.hasNumber ? 'bg-green-400' : 'bg-slate-600'}`} />
+                           Contains Number
+                        </div>
+                        <div className={`flex items-center gap-2 text-xs font-medium ${validations.hasSpecial ? 'text-green-400' : 'text-slate-500'}`}>
+                           <div className={`w-1.5 h-1.5 rounded-full ${validations.hasSpecial ? 'bg-green-400' : 'bg-slate-600'}`} />
+                           Special Character
+                        </div>
+                      </div>
                     </div>
                     <button
                       type="submit"
-                      disabled={loading}
-                      className="w-full bg-linear-to-r from-purple-500 to-pink-600 text-white font-bold py-3.5 rounded-xl hover:opacity-90 transition-all shadow-lg shadow-purple-500/20 disabled:opacity-50 mt-2"
+                      disabled={loading || !isPasswordValid}
+                      className="w-full bg-linear-to-r from-purple-500 to-pink-600 text-white font-bold py-3.5 rounded-xl hover:opacity-90 transition-all shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
                       {loading ? "Creating Account..." : "Create Account"}
                     </button>

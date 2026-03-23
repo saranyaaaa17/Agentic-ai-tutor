@@ -1,0 +1,133 @@
+tasks:
+  - name: Profile Learner
+    description: >
+      Analyze the provided learner data to update their profile in a JSON object. If any expected fields are missing (e.g., emotional_state, academic_background, or language_style), use intelligent defaults based on context or general heuristics.
+      - name: {e.g., "Mojdeh Ghadami"}
+      - cultural_context: {e.g., "Iran", "USA",...}
+      - language_preference: {e.g., "Farsi", "English", "Arabic", "French", "Spanish",}
+      - academic_background: {"STEM", "Non-STEM", or "Unknown"}
+      - emotional_state: {e.g., motivated, frustrated, curious, tired}
+      - motivation_trend: {"increasing", "decreasing", or "stable"}
+      - learning_style: {based on Felder-Silverman Learning Styles Model}
+      - language_style: {casual, formal, technical, humor/sarcasm}
+      - learning_topic: {e.g., 'CNN', 'history,...}
+    expected_output: >
+      A JSON object named "profile_output" containing all the above fields with correct values and restricted options where specified.
+      Example:
+        {
+          "profile_output": {
+            "personal_info": {
+              "name": "Sara Sarvi",
+              "cultural_context": "Iran",
+              "language_preference": "Farsi",
+              "academic_background": "Non-STEM",
+              "emotional_state": "curious",
+              "motivation_trend": "stable",
+              "learning_style": "verbal",
+              "language_style": ["casual"],
+              "learning_topic": "CNN"
+            }
+          }
+        }
+    inputs:
+      profile_data: "{profile_data}"
+    output_var: "profile_output"
+    agent: profiler_agent
+
+  - name: Save Profile to JSON
+    description: >
+      Save the profile_output to a single JSON file using SingleJSONProfileTool.
+    inputs:
+      profile_data: "{profile_output}"
+    expected_output: >
+      A confirmation message indicating the profile was successfully saved to the JSON file.
+      Example:
+         {
+            "save_result": "Profile successfully saved to the JSON file."
+          }
+    output_var: "save_result"
+    agent: json_saver_agent
+
+  - name: Generate Content
+    description: >
+      Using the learner profile, generate a clear explanation and analogy for the learning topic in the language_preference. Ensure the explanation is tailored to the learner's academic background. Only if the learner’s learning_style is visual, generate a relevant image using the ImageGenerationTool and include it in the markdown output.
+    inputs:
+      profile_output: "{profile_output}"
+    expected_output: >
+      A markdown file named lesson_content.md with:
+      - The explanation
+      - A real-world analogy
+      - (Optional) A generated image section, only for visual learners:
+        ![Alt Text](image_url)
+        _This visual is generated based on your verbal learning style._
+    output_var: "lesson_content.md"
+    agent: content_generator_agent
+
+  - name: Culturally Adapt Content
+    description: >
+      Retrieve and generate a culturally relevant real-world example and one multiple-choice question (MCQ) based on the learner’s cultural_context and the explanation content from lesson_content.md in the language_preference. Use the RAGTool to search the Mango dataset for content matching the learning_topic and cultural_context. Query should be a simple string like "{profile_output.personal_info.learning_topic} {profile_output.personal_info.cultural_context}". If no data is found, map the country to its continent and query again. Generate a globally understandable example if no data is found, with justification.
+    inputs:
+      profile_output: "{profile_output}"
+      lesson_content: "{lesson_content.md}"
+      language_preference: "{profile_output.personal_info.language_preference}"
+    expected_output: >
+      A markdown file named cultural_examples.md that contains:
+      - Cultural Example: A short story, metaphor, or case study
+      - Multiple-Choice Question:
+          - Question
+          - Four options (A–D)
+          - Correct answer marked
+          - Full explanation of the correct answer
+      - Source: The file source or justification
+    output_var: "cultural_examples.md"
+    agent: cultural_adapter_agent
+
+  - name: Evaluate Cultural Lesson
+    description: >
+      Evaluate the cultural examples provided in 'cultural_examples.md' using the PRACTICC rubric.
+      Use the RAGTool to validate that examples were sourced from the Mango dataset (prioritize learner's country, fallback to continent).
+      Check that each example includes a "source" field stating whether it was file-based or generated with justification.
+      Classify relevance based on the number of PRACTICC categories met:
+          - "Irrelevant": ≤3 categories
+          - "Mid-Relevant": 4–6 categories
+          - "Relevant": 7 or more categories
+    inputs:
+      cultural_examples_path: "cultural_examples.md"
+    expected_output: >
+      A markdown file called 'cultural_evaluation.md' with:
+      - Evaluation Result: One of "Irrelevant", "Mid-Relevant", or "Relevant"
+      - PRACTICC Assessment: Breakdown of each criterion
+      - Source Verification: Confirm if file-based or justified
+    output_var: "cultural_evaluation.md"
+    agent: evaluator_agent
+    
+
+  - name: Present Final Output
+    description: >
+      Combine the contents of lesson_content.md, cultural_examples.md, and cultural_evaluation.md into a single markdown output, separated by clear section headers. This is the final learning content to be shown to the user.
+    inputs:
+      lesson: "lesson_content.md"
+      cultural: "cultural_examples.md"
+      evaluation: "cultural_evaluation.md"
+    expected_output: >
+      A single markdown string that includes:
+      ## Part 1: Lesson Content
+      <contents of lesson_content.md>
+
+      ## Part 2: Cultural Examples
+      <contents of cultural_examples.md>
+
+      ## Part 3: Cultural Evaluation
+      <contents of cultural_evaluation.md>
+    output_var: "final_lesson_bundle"
+    agent: content_generator_agent
+    
+
+  - name: task_markdown_to_pdf
+    description: >
+     Convert a Markdown file to a PDF document, ensuring the preservation of formatting, structure, and embedded images using the mdpdf library.
+    inputs:
+        markdown_path: "final_lesson_bundle"
+    expected_output: >
+     A PDF file generated from the Markdown input, accurately reflecting the content with proper formatting. The PDF should be ready for sharing or printing.
+    agent: pdf_creator_agent

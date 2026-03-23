@@ -1,3 +1,5 @@
+import React from "react";
+
 const Logo = () => {
   return (
     <div className="flex items-center gap-3 cursor-pointer group">
@@ -120,9 +122,14 @@ const Logo = () => {
         </svg>
       </div>
 
-      <span className="text-xl font-bold tracking-tight bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent group-hover:to-cyan-400 transition-all duration-300">
-        Multi-Agent Tutor
-      </span>
+      <div className="flex flex-col">
+        <span className="text-xl font-black tracking-tighter bg-linear-to-r from-white to-slate-400 bg-clip-text text-transparent group-hover:to-blue-400 transition-all duration-300 uppercase">
+          Agentic<span className="text-blue-500"> AI</span>
+        </span>
+        <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.4em] mt-0.5 group-hover:text-slate-400 transition-colors">
+          Next-Gen Learning
+        </span>
+      </div>
     </div>
   );
 };

@@ -3,10 +3,11 @@ import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 
 // Import Agents (Pure Functions)
-import { getQuestion } from "../../agents/TeacherAgent";
+import { TeacherAgent } from "../../agents/TeacherAgent";
 import { evaluateAnswer } from "../../agents/EvaluatorAgent";
 import { analyzeGap } from "../../agents/KnowledgeGapAnalyzer";
 import { determineStrategy } from "../../agents/StrategyAgent";
+import { syncMasteryToSupabase } from "../../utils/syncUtils";
 
 const initialFlow = [
   {
@@ -26,6 +27,20 @@ const initialFlow = [
   }
 ];
 
+const createEmptyLearnerState = () => ({
+  mastery: {},
+  stats: {}
+});
+
+const clampMastery = (value) => Math.max(0, Math.min(1, value));
+
+const calculateMasteryFromStats = (correct = 0, attempts = 0) => {
+  if (attempts <= 0) return 0;
+  return clampMastery(correct / attempts);
+};
+
+const formatMasteryPercentage = (mastery = 0) => `${Math.round(clampMastery(mastery) * 100)}%`;
+
 const AssistantFlow = () => {
   const { user } = useAuth();
   const chatEndRef = useRef(null);
@@ -40,7 +55,7 @@ const AssistantFlow = () => {
 
   // Learning State (Centralized)
   const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [learnerState, setLearnerState] = useState({ mastery: {} });
+  const [learnerState, setLearnerState] = useState(createEmptyLearnerState);
   const [consecutiveIncorrect, setConsecutiveIncorrect] = useState(0);
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
@@ -64,7 +79,7 @@ const AssistantFlow = () => {
     setConsecutiveIncorrect(0);
     setConsecutiveCorrect(0);
     setCorrectCount(0);
-    setLearnerState({ mastery: {} }); 
+    setLearnerState(createEmptyLearnerState()); 
     setHistory([]); // Clear history
     setIsAssessmentComplete(false);
     setIsAnswerLocked(false);
@@ -210,10 +225,10 @@ const AssistantFlow = () => {
     // Initial Question (Diagnostic Phase - Start Medium)
     setTimeout(() => {
         if (!isMounted.current) return;
-        const question = getQuestion('dsa_hard', 'medium');
+        const question = TeacherAgent.getStaticQuestion('dsa_hard', 'medium');
         
         if (question) {
-            presentQuestion(question, 0.5); // Default start mastery
+            presentQuestion(question, learnerState.mastery[question.conceptId] || 0);
         } else {
              setMessages(prev => [...prev, { role: "assistant", text: "Error: Could not retrieve initial question." }]);
         }
@@ -226,12 +241,27 @@ const AssistantFlow = () => {
     await new Promise(r => setTimeout(r, 600)); // Realism delay
     if (!isMounted.current) return;
 
-    // 1. Evaluator Agent
-    const evaluation = evaluateAnswer(userAnswer, currentQuestion.correctAnswer);
+    // 1. Evaluator Agent (Calls Backend)
+    const conceptId = currentQuestion.conceptId;
+    const currentMastery = learnerState.mastery[conceptId] || 0;
+    const backendResponse = await evaluateAnswer(
+      currentQuestion.questionText,
+      currentQuestion.correctAnswer,
+      userAnswer,
+      conceptId,
+      getLearningLevel(currentMastery)
+    );
+    
+    const evaluation = backendResponse.evaluation || backendResponse; // Fallback
+    const workflow = backendResponse.workflow; // Capture workflow data
     
     // Batch Update 1: Feedback & Evaluation
     setEvaluationResult(evaluation); 
-    setMessages(prev => [...prev, { role: "assistant", text: evaluation.feedback }]);
+    setMessages(prev => [...prev, { 
+      role: "assistant", 
+      text: evaluation.feedback,
+      workflow: workflow // Attach workflow to message
+    }]);
 
     // Determine correctness state
     const isCorrect = evaluation.isCorrect;
@@ -247,16 +277,21 @@ const AssistantFlow = () => {
     }
 
     // 2. Update Learner State
-    const conceptId = currentQuestion.conceptId;
-    const currentMastery = learnerState.mastery[conceptId] || 0.5;
-    const accuracy = isCorrect ? 1 : 0;
-    
-    let newMastery = (0.7 * currentMastery) + (0.3 * accuracy);
-    newMastery = Math.max(0, Math.min(1, newMastery)); // Cap 0-1
+    const currentStats = learnerState.stats[conceptId] || { attempts: 0, correct: 0 };
+    const nextStats = {
+      attempts: currentStats.attempts + 1,
+      correct: currentStats.correct + (isCorrect ? 1 : 0)
+    };
+    const newMastery = calculateMasteryFromStats(nextStats.correct, nextStats.attempts);
 
     setLearnerState(prev => ({
-      mastery: { ...prev.mastery, [conceptId]: newMastery }
+      mastery: { ...prev.mastery, [conceptId]: newMastery },
+      stats: { ...prev.stats, [conceptId]: nextStats }
     }));
+
+    if (user?.id) {
+      syncMasteryToSupabase(user.id, { mastery_profile: { [conceptId]: newMastery } });
+    }
 
     // 3. Check for Completion BEFORE proceeding
     // If we just answered the 10th question, stop.
@@ -309,7 +344,7 @@ const AssistantFlow = () => {
                     }]);
                     
                     // REINFORCEMENT: Same Difficulty
-                    const nextQuestion = getQuestion(conceptId, currentDifficulty);
+                    const nextQuestion = TeacherAgent.getStaticQuestion(conceptId, currentDifficulty);
                     if (nextQuestion) presentQuestion(nextQuestion, currentMastery);
 
                 }, 3000); // Read time
@@ -334,7 +369,7 @@ const AssistantFlow = () => {
     }
     
     // Default / Maintain / Fallback
-    const nextQuestion = getQuestion(conceptId, nextDifficulty);
+    const nextQuestion = TeacherAgent.getStaticQuestion(conceptId, nextDifficulty);
     
     if (nextQuestion) {
        presentQuestion(nextQuestion, currentMastery);
@@ -454,7 +489,7 @@ const AssistantFlow = () => {
               {msg.role === "assistant" && msg.learnerCtx && !isAssessmentComplete && (
                  <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap gap-3 text-xs font-mono text-slate-400">
                     <span className={msg.learnerCtx.isWeak ? "text-yellow-400 font-bold" : ""}>
-                      Mastery: {msg.learnerCtx.mastery.toFixed(2)}
+                      Mastery: {formatMasteryPercentage(msg.learnerCtx.mastery)}
                     </span>
                     <span className="text-slate-500">|</span>
                     <span className={
@@ -481,7 +516,7 @@ const AssistantFlow = () => {
                                msg.learnerCtx.mastery < 0.4 ? "bg-red-500" :
                                msg.learnerCtx.mastery < 0.75 ? "bg-yellow-500" : "bg-green-500"
                           }`}
-                          style={{ width: `${Math.max(5, msg.learnerCtx.mastery * 100)}%` }}
+                          style={{ width: `${msg.learnerCtx.mastery * 100}%` }}
                       />
                     </div>
                     
@@ -499,6 +534,34 @@ const AssistantFlow = () => {
                     )}
                  </div>
               )}
+              {msg.role === "assistant" && msg.workflow && (
+                  <details className="mt-3 bg-black/20 rounded-lg border border-white/5 overflow-hidden group">
+                      <summary className="px-3 py-2 text-[10px] text-slate-400 uppercase tracking-wider font-semibold cursor-pointer hover:bg-white/5 flex items-center gap-2 select-none">
+                          <span className="text-blue-400">⚡ Agent Workflow</span>
+                          <span className="ml-auto opacity-50 text-[9px]">{msg.workflow.modelUsed}</span>
+                          <svg className="w-3 h-3 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                      </summary>
+                      <div className="p-3 border-t border-white/5 bg-black/40 space-y-2">
+                          {msg.workflow.steps.map((step, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-[10px]">
+                                  <div className="flex items-center gap-2">
+                                      <div className={`w-1.5 h-1.5 rounded-full ${step.status === 'completed' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                                      <span className="text-slate-300 font-mono">{step.agent}</span>
+                                  </div>
+                                  <span className="text-slate-500 font-mono">
+                                      {new Date(step.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' })}
+                                  </span>
+                              </div>
+                          ))}
+                          <div className="pt-2 mt-1 border-t border-white/5 flex justify-between items-center text-[10px] text-slate-400">
+                              <span>Total Processing Time</span>
+                              <span className="font-mono text-blue-300">{msg.workflow.totalProcessingTimeMs}ms</span>
+                          </div>
+                      </div>
+                  </details>
+              )}
             </div>
           ))}
           
@@ -512,16 +575,16 @@ const AssistantFlow = () => {
                       <div className="bg-white/5 p-3 rounded-lg">
                           <div className="text-slate-400 text-xs uppercase tracking-wider mb-1">Final Mastery</div>
                           <div className="text-2xl font-bold text-blue-400">
-                              {(learnerState.mastery?.[currentQuestion?.conceptId] || 0.5).toFixed(2)}
+                              {formatMasteryPercentage(learnerState.mastery?.[currentQuestion?.conceptId] || 0)}
                           </div>
                       </div>
                        <div className="bg-white/5 p-3 rounded-lg">
                           <div className="text-slate-400 text-xs uppercase tracking-wider mb-1">Level</div>
                           <div className={`text-2xl font-bold ${
-                               getLearningLevel(learnerState.mastery?.[currentQuestion?.conceptId] || 0.5) === "Beginner" ? "text-blue-400" :
-                               getLearningLevel(learnerState.mastery?.[currentQuestion?.conceptId] || 0.5) === "Intermediate" ? "text-cyan-400" : "text-green-400"
+                               getLearningLevel(learnerState.mastery?.[currentQuestion?.conceptId] || 0) === "Beginner" ? "text-blue-400" :
+                               getLearningLevel(learnerState.mastery?.[currentQuestion?.conceptId] || 0) === "Intermediate" ? "text-cyan-400" : "text-green-400"
                           }`}>
-                              {getLearningLevel(learnerState.mastery?.[currentQuestion?.conceptId] || 0.5)}
+                              {getLearningLevel(learnerState.mastery?.[currentQuestion?.conceptId] || 0)}
                           </div>
                       </div>
                       <div className="bg-white/5 p-3 rounded-lg">
@@ -540,9 +603,9 @@ const AssistantFlow = () => {
 
                   <div className="mb-6 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
                       <p className="text-blue-200 text-sm italic">
-                          {(learnerState.mastery[currentQuestion.conceptId] || 0.5) < 0.4 
+                          {(learnerState.mastery[currentQuestion.conceptId] || 0) < 0.4 
                               ? "Recommendation: Your mastery is developing. We recommend strengthening your fundamentals with core concept revision." 
-                              : (learnerState.mastery[currentQuestion.conceptId] || 0.5) <= 0.75
+                              : (learnerState.mastery[currentQuestion.conceptId] || 0) <= 0.75
                                   ? "Recommendation: Good foundation. We recommend more practice problems to reach advanced proficiency."
                                   : "Recommendation: Excellent work! You are ready for advanced content and complex challenges."
                           }
@@ -656,10 +719,10 @@ const AssistantFlow = () => {
                          <div className="flex justify-between items-end mb-1">
                              <span className="text-xs font-medium text-slate-300 capitalize truncate max-w-[70%]">{concept.replace('_', ' ')}</span>
                              <span className={`text-xs font-mono font-bold ${
-                                 mastery < 0.4 ? "text-red-400" :
-                                 mastery < 0.75 ? "text-yellow-400" : "text-green-400"
+                                mastery < 0.4 ? "text-red-400" :
+                                mastery < 0.75 ? "text-yellow-400" : "text-green-400"
                              }`}>
-                                 {mastery.toFixed(2)}
+                                 {formatMasteryPercentage(mastery)}
                              </span>
                          </div>
                          <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-white/5">
@@ -668,7 +731,7 @@ const AssistantFlow = () => {
                                       mastery < 0.4 ? "bg-red-500" :
                                       mastery < 0.75 ? "bg-yellow-500" : "bg-green-500"
                                  }`}
-                                 style={{ width: `${Math.max(5, mastery * 100)}%` }}
+                                 style={{ width: `${mastery * 100}%` }}
                              />
                          </div>
                      </div>

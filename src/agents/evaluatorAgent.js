@@ -1,37 +1,52 @@
 /**
- * Evaluator Agent
- * Responsibility: Pure function to evaluate answers.
- * No side effects. No access to learner state.
- *
- * @param {string} userAnswer
+ * Evaluator Agent (Frontend Wrapper)
+ * Responsibility: Call the backend API for answer processing (evaluation + gap analysis).
+ * 
+ * @param {string} question
  * @param {string} correctAnswer
- * @returns {object} { isCorrect, errorType, feedback }
+ * @param {string} studentAnswer
+ * @param {string} topic
+ * @param {string} studentLevel
+ * @returns {Promise<object>} { evaluation: {...}, knowledgeGap: {...} }
  */
-export const evaluateAnswer = (userAnswer, correctAnswer) => {
-  if (!userAnswer) {
-    return {
-      isCorrect: false,
-      errorType: "invalid_input",
-      feedback: "Please provide an answer."
-    };
-  }
+export const evaluateAnswer = async (question, correctAnswer, studentAnswer, topic = "General", studentLevel = "Intermediate") => {
+  try {
+    const response = await fetch("/api/process-answer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ question, correctAnswer, studentAnswer, topic, studentLevel }),
+    });
 
-  // Normalize: trim, lowercase if string
-  const normUser = String(userAnswer).trim().toLowerCase();
-  const normCorrect = String(correctAnswer).trim().toLowerCase();
-  const isCorrect = normUser === normCorrect;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Processing failed");
+    }
 
-  if (isCorrect) {
+    const data = await response.json();
+    
+    // For backward compatibility or direct access, we return the full structure.
+    // The consumer should now expect { evaluation, knowledgeGap }
+    return data; 
+  } catch (error) {
+    console.error("Processing Error:", error);
+    // Fallback
     return {
-      isCorrect: true,
-      errorType: "none",
-      feedback: "Correct! Well done."
-    };
-  } else {
-    return {
-      isCorrect: false,
-      errorType: "conceptual_error", 
-      feedback: `Incorrect. The correct answer is: ${correctAnswer}`
+      evaluation: {
+        isCorrect: false,
+        score: 0,
+        misconceptions: ["Server error"],
+        strengths: [],
+        feedback: "Unable to process answer."
+      },
+      knowledgeGap: {
+        gapType: "unknown",
+        missingConcept: "unknown",
+        severity: "unknown",
+        foundational: false,
+        reasoning: "System error."
+      }
     };
   }
 };

@@ -1,19 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import BackButton from "../components/ui/BackButton";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { user, signInWithGoogle } = useAuth();
   const [authMethod, setAuthMethod] = useState("email"); // 'email' | 'phone'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   // Email Login
   const handleEmailLogin = async (e) => {
@@ -33,12 +42,7 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
+    const { error } = await signInWithGoogle();
     if (error) setError(error.message);
     setLoading(false);
   };
@@ -102,10 +106,10 @@ const Login = () => {
                 </div>
                 <h1 className="text-5xl font-black mb-6 tracking-tight leading-tight">
                   Welcome Back, <br/>
-                  <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-400 to-blue-500">Agent.</span>
+                  <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-400 to-blue-500">Learner.</span>
                 </h1>
                 <p className="text-slate-400 text-lg leading-relaxed mb-8">
-                  Your personalized AI Tutor is ready to resume the simulation. Securely log in to access your learning dashboard.
+                  Your personalized AI Tutor is ready to help you continue. Log in to access your learning dashboard.
                 </p>
                 
                 <div className="flex gap-4">
@@ -186,19 +190,37 @@ const Login = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-600"
-                            placeholder="agent@example.com"
+                            placeholder="you@example.com"
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Password</label>
-                          <input
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-600"
-                            placeholder="••••••••"
-                          />
+                          <div className="relative">
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              required
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all placeholder:text-slate-600 pr-10"
+                              placeholder="••••••••"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                            >
+                              {showPassword ? (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                              ) : (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
                         </div>
                         <button
                           type="submit"
@@ -260,7 +282,7 @@ const Login = () => {
                  <div className="mt-8 text-center text-sm text-slate-400">
                    Don't have an account?{" "}
                    <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline">
-                     Register Agent
+                     Create Account
                    </Link>
                  </div>
               </motion.div>

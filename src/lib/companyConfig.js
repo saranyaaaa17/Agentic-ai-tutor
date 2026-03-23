@@ -2,7 +2,7 @@ export const companyConfig = {
   tcs: {
     id: "tcs",
     name: "TCS National Qualifier Test",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Tata_Consultancy_Services_Logo.svg/512px-Tata_Consultancy_Services_Logo.svg.png",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Tata_Consultancy_Services_Logo.svg",
     description: "Focuses heavily on Quantitative Aptitude and Coding standards.",
     timeLimit: 20 * 60, // 20 mins for mini-mock
     difficulty: "Moderate",

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import SignUp from "./pages/SignUp";
@@ -12,32 +12,92 @@ import ProductCompanySelection from "./assessment/ProductCompanySelection";
 import ProductBasedAssessment from "./assessment/ProductBasedAssessment";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import CodePage from "./pages/CodePage";
+import DailyChallengePage from "./pages/DailyChallengePage";
+import Socratic from "./components/chat/Socratic";
 
-import FloatingAssistant from "./components/assistant/FloatingAssistant";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import ContactSupport from "./pages/ContactSupport";
+
+import { SettingsProvider } from "./context/SettingsContext";
 
 function App() {
   return (
-    <BrowserRouter>
+    <SettingsProvider>
+      <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/home" element={<LandingPage />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/start-learning" element={<StartLearning />} />
-        <Route path="/assessment" element={<Assessment />} />
-        <Route path="/problem-assessment" element={<ProblemSolvingAssessment />} />
-        <Route path="/service-assessment" element={<ServiceBasedAssessment />} />
-        <Route path="/service-selection" element={<ServiceCompanySelection />} />
-        <Route path="/product-selection" element={<ProductCompanySelection />} />
-        <Route path="/product-assessment" element={<ProductBasedAssessment />} />
-        <Route path="/product-assessment" element={<ProductBasedAssessment />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/contact" element={<ContactSupport />} />
+        
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/start-learning" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/assessment" element={
+          <ProtectedRoute>
+            <Assessment />
+          </ProtectedRoute>
+        } />
+        <Route path="/problem-assessment" element={
+          <ProtectedRoute>
+            <ProblemSolvingAssessment />
+          </ProtectedRoute>
+        } />
+        <Route path="/service-assessment" element={
+          <ProtectedRoute>
+            <ServiceBasedAssessment />
+          </ProtectedRoute>
+        } />
+        <Route path="/service-selection" element={
+          <ProtectedRoute>
+            <ServiceCompanySelection />
+          </ProtectedRoute>
+        } />
+        <Route path="/product-selection" element={
+          <ProtectedRoute>
+             <ProductCompanySelection />
+          </ProtectedRoute>
+        } />
+        <Route path="/product-assessment" element={
+          <ProtectedRoute>
+             <ProductBasedAssessment />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        } />
+        <Route path="/code" element={
+          <ProtectedRoute>
+            <CodePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/daily-challenge" element={
+          <ProtectedRoute>
+            <DailyChallengePage />
+          </ProtectedRoute>
+        } />
       </Routes>
-      
-      {/* Global AI Assistant */}
-      <FloatingAssistant />
+      <Socratic />
     </BrowserRouter>
+  </SettingsProvider>
   );
 }
 

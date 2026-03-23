@@ -1,0 +1,14 @@
+{
+  "user_id": "test_user",
+  "mastery": {},
+  "last_question": "Explain loops",
+  "type": "evaluation",
+  "data": {
+    "score": 1.0,
+    "feedback": "Excellent work!",
+    "is_correct": true,
+    "updated_mastery": {
+      "concept": 1.0
+    }
+  }
+}

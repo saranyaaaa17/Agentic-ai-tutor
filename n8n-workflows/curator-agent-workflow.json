@@ -1,0 +1,106 @@
+{
+  "name": "Curator Agent - Resource Aggregator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "curator-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c1u2r3a4-5678-9012-3456-7890abcdef12",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "topic",
+              "name": "topic",
+              "value": "={{ $json.body.topic }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "set-topic",
+      "name": "Extract Topic",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "message": "You are a Resource Curator. Find 3 actual relevant links (YouTube, GFG, or Documentation) for the given topic.\n\nSTRICT JSON Output:\n{\n  \"resources\": [\n    {\n      \"title\": \"Title\",\n      \"url\": \"https://...\",\n      \"type\": \"article/video/practice\"\n    }\n  ]\n}"
+            },
+            {
+              "role": "user",
+              "message": "Topic: {{ $json.topic }}"
+            }
+          ]
+        }
+      },
+      "id": "openai-curator",
+      "name": "OpenAI Curate",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.choices[0].message.content }}",
+        "options": {}
+      },
+      "id": "respond-curator",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Topic": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Curate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Curate": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

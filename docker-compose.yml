@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  coordinator:
+    build:
+      context: .
+      dockerfile: Dockerfile.coordinator
+    container_name: coordinator
+    ports:
+      - "8000:8000"
+    depends_on:
+      - tutor
+      - curator
+      - evaluator
+      - memory_manager
+
+  tutor:
+    build:
+      context: .
+      dockerfile: Dockerfile.tutor
+    container_name: tutor
+    ports:
+      - "8001:8001"
+
+  curator:
+    build:
+      context: .
+      dockerfile: Dockerfile.curator
+    container_name: curator
+    ports:
+      - "8002:8002"
+
+  evaluator:
+    build:
+      context: .
+      dockerfile: Dockerfile.evaluator
+    container_name: evaluator
+    ports:
+      - "8003:8003"
+
+  memory_manager:
+    build:
+      context: .
+      dockerfile: Dockerfile.memory_manager
+    container_name: memory_manager
+    ports:
+      - "8004:8004"
+    volumes:
+      - memory_store:/app/memory_store
+
+volumes:
+  memory_store:

@@ -1,37 +1,36 @@
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
-const BackButton = ({ to, label = "Back", className = "" }) => {
-  const navigate = useNavigate();
+const BackButton = ({ to, label = "Back", className = "", onClick }) => {
+    const navigate = useNavigate();
 
-  const handleBack = () => {
-    if (to) {
-      navigate(to);
-    } else {
-      navigate(-1);
-    }
-  };
+    const handleClick = () => {
+        if (onClick) onClick();
+        else if (to) navigate(to);
+        else navigate(-1);
+    };
 
-  return (
-    <button
-      onClick={handleBack}
-      className={`group flex items-center gap-2 px-4 py-2 
-                  bg-white/5 hover:bg-white/10 
-                  border border-white/10 hover:border-cyan-500/50 
-                  rounded-lg backdrop-blur-md 
-                  text-slate-400 hover:text-cyan-400 
-                  transition-all duration-300 ${className}`}
-    >
-      <svg 
-        className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" 
-        fill="none" 
-        viewBox="0 0 24 24" 
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-      <span className="text-sm font-medium">{label}</span>
-    </button>
-  );
+    return (
+        <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ x: -4 }}
+            onClick={handleClick}
+            className={`group flex items-center gap-2 px-3 py-1.5 rounded-xl 
+                        text-slate-400 hover:text-cyan-400 
+                        hover:bg-cyan-500/5 transition-all duration-300 
+                        backdrop-blur-sm ${className}`}
+        >
+            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-900 shadow-lg border border-white/5 group-hover:border-cyan-500/30 transition-colors">
+                <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </div>
+            <span className="text-xs font-mono uppercase tracking-[0.2em] font-bold">
+                {label}
+            </span>
+        </motion.button>
+    );
 };
 
 export default BackButton;

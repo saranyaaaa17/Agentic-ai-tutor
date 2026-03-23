@@ -1,0 +1,118 @@
+{
+  "name": "Evaluator Agent - Scoring & Feedback",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evaluator-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "78a2f1b0-1234-4567-890a-bcdef1234567",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "question",
+              "name": "question",
+              "value": "={{ $json.body.question }}",
+              "type": "string"
+            },
+            {
+              "id": "answer",
+              "name": "answer",
+              "value": "={{ $json.body.user_answer }}",
+              "type": "string"
+            },
+            {
+              "id": "correct",
+              "name": "correct",
+              "value": "={{ $json.body.correct_answer }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "f1a2b3c4-5678-9012-3456-7890abcdef12",
+      "name": "Extract Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "message": "You are an Elite Evaluator. Compare the student answer with the correct answer.\n\nSTRICT JSON Output:\n{\n  \"score\": 0.0 to 1.0,\n  \"correct\": true/false,\n  \"feedback\": \"Constructive feedback\",\n  \"analysis\": \"Why it was correct/incorrect\"\n}"
+            },
+            {
+              "role": "user",
+              "message": "Question: {{ $json.question }}\nStudent Answer: {{ $json.answer }}\nCorrect Reference: {{ $json.correct }}"
+            }
+          ]
+        }
+      },
+      "id": "openai-evaluator",
+      "name": "OpenAI Evaluation",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.choices[0].message.content }}",
+        "options": {}
+      },
+      "id": "respond-eval",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Evaluation": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -4,7 +4,9 @@ import HeroSection from "../components/landing/HeroSection";
 import AboutSection from "../components/landing/AboutSection";
 import HowItWorks from "../components/landing/HowItWorks";
 import FeaturesSection from "../components/landing/FeaturesSection";
+import SocraticHighlight from "../components/landing/SocraticHighlight";
 import PremiumSection from "../components/landing/PremiumSection";
+import EcosystemSection from "../components/landing/EcosystemSection";
 import Footer from "../components/layout/Footer";
 import FloatingAssistant from "../components/assistant/FloatingAssistant";
 
@@ -59,6 +61,12 @@ const LandingPage = () => {
         <section id="features" className="py-6">
           <FeaturesSection />
         </section>
+
+        {/* Socratic Highight */}
+        <SocraticHighlight />
+
+        {/* Global Ecosystem Patterns Section */}
+        <EcosystemSection />
 
         {/* Premium */}
         <section id="premium" className="py-6">

@@ -1,5 +1,6 @@
 
 import { questionBank } from "../data/questionBank";
+import { ensureQuestionHints } from "./questionEnhancers";
 
 // Fisher-Yates Shuffle
 export const shuffleArray = (array) => {
@@ -16,8 +17,25 @@ export const shuffleArray = (array) => {
 // Selects a subset of questions (e.g., 5-10) from the bank for a specific domain.
 // Attempts to balance difficulty: 40% Easy, 40% Medium, 20% Hard if possible.
 export const generateAssessment = (domain, count = 10) => {
+    console.log(`[AssessmentUtils] 📦 Serving STATIC questions for domain: "${domain}"`);
     const allQuestions = questionBank[domain] || [];
-    if (allQuestions.length === 0) return [];
+    
+    // If question bank is empty, return placeholder questions
+    if (allQuestions.length === 0) {
+        console.warn(`[AssessmentUtils] ⚠️ Question bank is empty for domain "${domain}". Returning placeholders.`);
+        return Array.from({ length: count }, (_, i) => ({
+            id: `placeholder_${i + 1}`,
+            q: `Question ${i + 1}: Waiting for AI to generate questions for ${domain}...`,
+            options: [
+                "Please wait - AI is generating questions",
+                "Backend server must be running",
+                "Check if /api/teach is accessible",
+                "This is a fallback placeholder"
+            ],
+            ans: "Please wait - AI is generating questions",
+            difficulty: "medium"
+        }));
+    }
 
     let selected = [];
     const uniqueShuffled = shuffleArray([...allQuestions]);
@@ -43,7 +61,7 @@ export const generateAssessment = (domain, count = 10) => {
         loops++;
     }
     
-    return selected;
+    return ensureQuestionHints(selected, domain);
 };
 
 // Session Storage Helpers
