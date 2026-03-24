@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
+import { useSettings } from "../../context/SettingsContext";
 import Logo from "./logo";
 
 const Navbar = () => {
   const { user } = useAuth();
+  const { appearance, setAppearance } = useSettings();
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
 

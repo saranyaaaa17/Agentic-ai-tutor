@@ -46,6 +46,7 @@ const ProblemSolvingAssessment = () => {
   const [badges, setBadges] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [codeSubmissions, setCodeSubmissions] = useState({});
   const [codeEvaluationState, setCodeEvaluationState] = useState({});
@@ -244,6 +245,8 @@ const ProblemSolvingAssessment = () => {
           }, 1000);
       } else if (timeLeft === 0 && timerActive) {
           setTimerActive(false);
+          setIsLocked(true);
+          nextQuestion();
           // Auto-submit or move next if timed out
           handleAnswer("TIMEOUT");
       }
@@ -419,6 +422,7 @@ const ProblemSolvingAssessment = () => {
   };
 
   const nextQuestion = () => {
+    setIsLocked(false);
     setCurrentFeedback(null);
     if (currentQuestionIndex < questions.length - 1) {
       setAgentStatus("Problem Setter Agent: Loading next challenge...");
@@ -709,7 +713,7 @@ const ProblemSolvingAssessment = () => {
              <div className="absolute top-0 left-0 h-1 bg-slate-800 w-full">
                 <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                    animate={{ width: `${(currentQuestionIndex / questions.length) * 100}%` }}
                    className="h-full bg-green-500" />
               </div>
 
@@ -745,7 +749,7 @@ const ProblemSolvingAssessment = () => {
                             <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
                                 <motion.div 
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                                    animate={{ width: `${(currentQuestionIndex / questions.length) * 100}%` }}
                                     className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]"
                                 />
                             </div>

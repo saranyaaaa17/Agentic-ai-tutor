@@ -1,6 +1,6 @@
 import { questionBank } from "../data/questionBank";
 
-const API_URL = "http://localhost:8000/api/teach";
+import { api } from "../lib/api";
 
 /**
  * Teacher Agent
@@ -54,7 +54,7 @@ export const TeacherAgent = {
    */
   teachConcept: async (topic, difficulty, history = [], studentProfile = {}) => {
     try {
-      const res = await fetch(API_URL, {
+      const res = await fetch(api.teach, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -99,7 +99,7 @@ export const TeacherAgent = {
       }
       studentProfile = { ...studentProfile, recent_questions: recentQuestions };
 
-      const res = await fetch(API_URL, {
+      const res = await fetch(api.teach, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -145,7 +145,7 @@ export const TeacherAgent = {
    */
   analyzeGap: async (questions, answers, topic) => {
     try {
-      const res = await fetch("http://localhost:8000/api/gap-analysis", {
+      const res = await fetch(api.gap, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questions, answers, topic })
@@ -167,7 +167,7 @@ export const TeacherAgent = {
    */
   evaluateAnswer: async (question, userAnswer, topic, correctAnswer, concepts = []) => {
     try {
-      const res = await fetch("http://localhost:8000/api/evaluate", {
+      const res = await fetch(api.evaluate, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -191,7 +191,7 @@ export const TeacherAgent = {
    */
   diagnoseMistake: async (question, userAnswer, evaluatorOutput) => {
     try {
-      const res = await fetch("http://localhost:8000/api/diagnose-mistake", {
+      const res = await fetch(api.diagnose, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, user_answer: userAnswer, evaluator_output: evaluatorOutput })
@@ -209,7 +209,7 @@ export const TeacherAgent = {
    */
   getStrategy: async (proficiencyLevel, weakConcepts, topic, masteryProfile = {}, metaCognition = 'balanced', learningSpeed = 'medium', confidenceScore = 0.5, engagementScore = 0.8) => {
     try {
-      const res = await fetch("http://localhost:8000/api/strategy", {
+      const res = await fetch(api.strategy, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

@@ -72,6 +72,7 @@ const Assessment = () => {
   const [xpEarned, setXpEarned] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
   const isLoaded = useRef(false);
@@ -138,6 +139,7 @@ const Assessment = () => {
         const limit = q.time_limit || TeacherAgent.getTimeLimit(q.difficulty);
         setTimeLeft(limit);
         setTimerActive(true);
+        setIsLocked(false);
     }
   }, [currentQuestionIndex, currentStep, questions]);
 
@@ -149,8 +151,9 @@ const Assessment = () => {
           }, 1000);
       } else if (timeLeft === 0 && timerActive) {
           setTimerActive(false);
+          setIsLocked(true);
           // Auto-submit or move next if timed out
-          handleAnswer("TIMEOUT", false);
+          handleAnswer("TIMEOUT");
           setTimeout(() => nextQuestion(), 1000);
       }
       return () => clearInterval(interval);
@@ -321,6 +324,7 @@ const Assessment = () => {
   };
 
   const handleAnswer = (answer) => {
+    if (isLocked) return;
     setAnswers({ ...answers, [currentQuestionIndex]: answer });
   };
 
@@ -574,7 +578,7 @@ const Assessment = () => {
              <div className="absolute top-0 left-0 h-1.5 bg-slate-800/50 w-full">
                 <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                    animate={{ width: `${(currentQuestionIndex / questions.length) * 100}%` }}
                     className="h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.6)]"
                 />
              </div>
@@ -601,12 +605,12 @@ const Assessment = () => {
                        <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Progress</div>
                        <div className="flex flex-col gap-2 min-w-[100px] mt-1">
                           <div className="text-xs font-black text-white tracking-tighter text-left">
-                             {Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}%
+                             {Math.round((currentQuestionIndex / questions.length) * 100)}%
                           </div>
                           <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
                              <motion.div 
                                 initial={{ width: 0 }}
-                                animate={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                                animate={{ width: `${(currentQuestionIndex / questions.length) * 100}%` }}
                                 className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]"
                              />
                           </div>
@@ -699,18 +703,44 @@ const Assessment = () => {
             </div>
 
             <div className="flex justify-between items-center pt-8 border-t border-white/5">
-              <div className="text-[9px] text-slate-600 font-mono font-bold uppercase tracking-widest">Targeting: {questions[currentQuestionIndex]?.concepts?.slice(0, 1) || "Core Logic"}</div>
-              <button
-                onClick={nextQuestion}
-                disabled={!answers[currentQuestionIndex]}
-                className={`group flex items-center gap-3 px-6 py-3 rounded-xl font-black text-xs transition-all
-                  ${answers[currentQuestionIndex] 
-                    ? "bg-white text-slate-950 hover:bg-blue-50 shadow-xl active:scale-95" 
-                    : "bg-slate-800/50 text-slate-600 cursor-not-allowed border border-slate-800"}`}
+                            <button 
+                onClick={() => {
+                  if(window.confirm("Are you sure you want to exit? Your progress will be saved.")) {
+                    navigate('/dashboard');
+                  }
+                }}
+                className="p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                title="Exit Assessment"
               >
-                {currentQuestionIndex === questions.length - 1 ? "Finish Session" : "Next Question"}
-                <Icon.ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
+<div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    if (currentQuestionIndex > 0) {
+                      setCurrentQuestionIndex(prev => prev - 1);
+                      setShowHint(false);
+                      setIsLocked(false);
+                    }
+                  }}
+                  disabled={currentQuestionIndex === 0 || isLocked}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all disabled:opacity-20"
+                >
+                  <Icon.ChevronRight className="w-4 h-4 rotate-180" />
+                  Previous
+                </button>
+                <button
+                  onClick={nextQuestion}
+                  disabled={!answers[currentQuestionIndex] || isLocked}
+                  className={`group flex items-center gap-3 px-6 py-3 rounded-xl font-black text-xs transition-all
+                    ${answers[currentQuestionIndex] 
+                      ? "bg-white text-slate-950 hover:bg-blue-50 shadow-xl active:scale-95" 
+                      : "bg-slate-800/50 text-slate-600 cursor-not-allowed border border-slate-800"}`}
+                >
+                  {currentQuestionIndex === questions.length - 1 ? "Finish Session" : "Next Question"}
+                  <Icon.ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

@@ -67,7 +67,7 @@ export const generateAssessment = (domain, count = 10) => {
 // Session Storage Helpers
 export const saveAssessmentState = (key, state) => {
     try {
-        sessionStorage.setItem(key, JSON.stringify(state));
+        localStorage.setItem(key, JSON.stringify(state));
     } catch (e) {
         console.error("Failed to save assessment state", e);
     }
@@ -75,7 +75,7 @@ export const saveAssessmentState = (key, state) => {
 
 export const loadAssessmentState = (key) => {
     try {
-        const saved = sessionStorage.getItem(key);
+        const saved = localStorage.getItem(key);
         return saved ? JSON.parse(saved) : null;
     } catch (e) {
         return null;
@@ -84,7 +84,7 @@ export const loadAssessmentState = (key) => {
 
 
 export const clearAssessmentState = (key) => {
-    sessionStorage.removeItem(key);
+    localStorage.removeItem(key);
 };
 
 // Calculate Mastery Score

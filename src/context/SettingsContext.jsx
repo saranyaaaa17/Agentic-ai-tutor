@@ -16,8 +16,10 @@ export const SettingsProvider = ({ children }) => {
         localStorage.setItem('appearance', appearance);
         // Apply theme to document
         if (isDark) {
+            document.documentElement.classList.add('dark');
             document.body.classList.remove('light');
         } else {
+            document.documentElement.classList.remove('dark');
             document.body.classList.add('light');
         }
     }, [appearance, isDark]);
