@@ -1,12 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://ai-tutor-backend-402q.onrender.com/api/$1"
-    },
-    {
-      "source": "/((?!api/|assets/|favicon.ico).*)",
-      "destination": "/index.html"
+      "source": "/(.*)",
+      "destination": "/"
     }
   ]
 }

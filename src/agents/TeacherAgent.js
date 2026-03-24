@@ -1,6 +1,8 @@
 import { questionBank } from "../data/questionBank";
 
-import { api } from "../lib/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:8000" : "");
+const API_URL = `${API_BASE_URL}/api/teach`;
+
 
 /**
  * Teacher Agent
@@ -54,7 +56,7 @@ export const TeacherAgent = {
    */
   teachConcept: async (topic, difficulty, history = [], studentProfile = {}) => {
     try {
-      const res = await fetch(api.teach, {
+      const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -88,7 +90,7 @@ export const TeacherAgent = {
     console.log(`[TeacherAgent] 🤖 Requesting AI Assessment (${numQuestions} questions) for topic: "${topic}"...`);
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 35000); // 120s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout
 
       // Anti-Context: inject recent questions from session storage
       let recentQuestions = [];
@@ -99,7 +101,7 @@ export const TeacherAgent = {
       }
       studentProfile = { ...studentProfile, recent_questions: recentQuestions };
 
-      const res = await fetch(api.teach, {
+      const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -145,7 +147,7 @@ export const TeacherAgent = {
    */
   analyzeGap: async (questions, answers, topic) => {
     try {
-      const res = await fetch(api.gap, {
+      const res = await fetch(`${API_BASE_URL}/api/gap-analysis`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questions, answers, topic })
@@ -167,7 +169,7 @@ export const TeacherAgent = {
    */
   evaluateAnswer: async (question, userAnswer, topic, correctAnswer, concepts = []) => {
     try {
-      const res = await fetch(api.evaluate, {
+      const res = await fetch(`${API_BASE_URL}/api/evaluate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -191,7 +193,7 @@ export const TeacherAgent = {
    */
   diagnoseMistake: async (question, userAnswer, evaluatorOutput) => {
     try {
-      const res = await fetch(api.diagnose, {
+      const res = await fetch(`${API_BASE_URL}/api/diagnose-mistake`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, user_answer: userAnswer, evaluator_output: evaluatorOutput })
@@ -209,7 +211,7 @@ export const TeacherAgent = {
    */
   getStrategy: async (proficiencyLevel, weakConcepts, topic, masteryProfile = {}, metaCognition = 'balanced', learningSpeed = 'medium', confidenceScore = 0.5, engagementScore = 0.8) => {
     try {
-      const res = await fetch(api.strategy, {
+      const res = await fetch(`${API_BASE_URL}/api/strategy`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -229,46 +231,5 @@ export const TeacherAgent = {
       console.error("Strategy generation failed:", error);
       return null;
     }
-  },
-    
-    /**
-     * Call the Socratic chat endpoint for conversation.
-     */
-    chat: async (message, history = [], complexity = 3, socraticMode = true) => {
-        try {
-            const res = await fetch(api.chat, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message, history, complexity, socratic_mode: socraticMode })
-            });
-            if (!res.ok) throw new Error(`Chat API Error: ${res.statusText}`);
-            return await res.json();
-        } catch (error) {
-            console.error("[TeacherAgent] ❌ Chat Failed:", error);
-            throw error;
-        }
-    },
-
-    /**
-     * Generate an interview question based on history or topic.
-     */
-    generateInterviewQuestion: async (topic, history = []) => {
-        try {
-            const res = await fetch(api.chat, { // Interview is currently handled via Chat router in backend
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    message: `SYSTEM: Act as a technical interviewer. Ask me a single tough technical question based on the topic: ${topic}.`, 
-                    history, 
-                    complexity: 5, 
-                    socratic_mode: false 
-                })
-            });
-            if (!res.ok) throw new Error(`Interview API Error: ${res.statusText}`);
-            return await res.json();
-        } catch (error) {
-            console.error("[TeacherAgent] ❌ Interview Generation Failed:", error);
-            throw error;
-        }
-    }
+  }
 };

@@ -72,7 +72,6 @@ const Assessment = () => {
   const [xpEarned, setXpEarned] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
   const [showHint, setShowHint] = useState(false);
 
   const isLoaded = useRef(false);
@@ -139,7 +138,6 @@ const Assessment = () => {
         const limit = q.time_limit || TeacherAgent.getTimeLimit(q.difficulty);
         setTimeLeft(limit);
         setTimerActive(true);
-        setIsLocked(false);
     }
   }, [currentQuestionIndex, currentStep, questions]);
 
@@ -151,14 +149,15 @@ const Assessment = () => {
           }, 1000);
       } else if (timeLeft === 0 && timerActive) {
           setTimerActive(false);
-          setIsLocked(true);
           // Auto-submit or move next if timed out
-          handleAnswer("TIMEOUT");
+          if (!answers[currentQuestionIndex]) {
+              handleAnswer("TIMEOUT");
+          }
           setTimeout(() => nextQuestion(), 1000);
       }
       return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timerActive, timeLeft]);
+  }, [timerActive, timeLeft, currentQuestionIndex, answers]);
 
 
   useEffect(() => {
@@ -324,7 +323,7 @@ const Assessment = () => {
   };
 
   const handleAnswer = (answer) => {
-    if (isLocked) return;
+    if (timeLeft === 0 && timerActive === false) return; // Prevent answering after timeout
     setAnswers({ ...answers, [currentQuestionIndex]: answer });
   };
 
@@ -458,7 +457,14 @@ const Assessment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans selection:bg-blue-500/30">
+    <div 
+      onClick={() => {
+        clearAssessmentState(assessmentId);
+        navigate('/');
+      }}
+      className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans selection:bg-blue-500/30 cursor-pointer"
+    >
+
       
       {/* Background Grid with Fade */}
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center mask-[linear-gradient(180deg,white,rgba(255,255,255,0))] pointer-events-none opacity-50" />
@@ -511,8 +517,10 @@ const Assessment = () => {
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-4xl mx-auto mt-12 mb-12 relative"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-4xl mx-auto mt-12 mb-12 relative cursor-default"
           >
+
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
             
             <div className="text-center mb-16 relative z-10">
@@ -566,14 +574,17 @@ const Assessment = () => {
             </div>
           </motion.div>
         )}
-          {currentStep === "assessment" && (
+        {currentStep === "assessment" && (
+
           <motion.div
             key="question-card"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="w-full max-w-3xl mx-auto bg-slate-900/60 backdrop-blur-2xl border border-slate-800 p-6 md:p-10 rounded-[32px] shadow-2xl relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-3xl mx-auto bg-slate-900/60 backdrop-blur-2xl border border-slate-800 p-6 md:p-10 rounded-[32px] shadow-2xl relative overflow-hidden cursor-default"
           >
+
              {/* Progress Bar */}
              <div className="absolute top-0 left-0 h-1.5 bg-slate-800/50 w-full">
                 <motion.div 
@@ -616,32 +627,6 @@ const Assessment = () => {
                           </div>
                        </div>
                    </div>
-                   <div className="w-px h-8 bg-white/5 self-end mb-1" />
-                   <div>
-                       <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Accuracy</div>
-                       <div className="flex flex-col gap-2 min-w-[100px] mt-1">
-                          <div className="text-xs font-black text-white tracking-tighter text-left">
-                             {(() => {
-                                 const attempted = Object.keys(evaluationResults).length;
-                                 if (attempted === 0) return "0%";
-                                 const correct = Object.values(evaluationResults).filter(Boolean).length;
-                                 return Math.round((correct / attempted) * 100) + "%";
-                             })()}
-                          </div>
-                          <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                             <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: (() => {
-                                    const attempted = Object.keys(evaluationResults).length;
-                                    if (attempted === 0) return "0%";
-                                    const correct = Object.values(evaluationResults).filter(Boolean).length;
-                                    return (correct / attempted) * 100 + "%";
-                                })() }}
-                                className="h-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]"
-                             />
-                          </div>
-                       </div>
-                   </div>
                 </div>
             </div>
 
@@ -678,306 +663,47 @@ const Assessment = () => {
             </div>
  
              <div className="grid grid-cols-2 gap-4 mb-8">
-              {questions[currentQuestionIndex]?.options.map((option, idx) => {
-                const isSelected = answers[currentQuestionIndex] === option;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleAnswer(option)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex items-center gap-4 group relative overflow-hidden h-full min-h-[70px]
-                      ${isSelected
-                        ? "bg-blue-600/10 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.1)]" 
-                        : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-200"}`}
-                  >
-                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all duration-300
-                          ${isSelected 
-                              ? 'border-blue-500 scale-110' 
-                              : 'border-slate-700 group-hover:border-slate-500'}`}>
-                          {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"/>}
-                    </div>
-                    <span className="text-sm font-bold tracking-tight leading-snug">{option}</span>
-                    {isSelected && <div className="absolute right-3 opacity-10"><Icon.Zap className="w-6 h-6 text-blue-500" /></div>}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex justify-between items-center pt-8 border-t border-white/5">
-                            <button 
-                onClick={() => {
-                  if(window.confirm("Are you sure you want to exit? Your progress will be saved.")) {
-                    navigate('/dashboard');
-                  }
-                }}
-                className="p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
-                title="Exit Assessment"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-<div className="flex gap-4">
-                <button
-                  onClick={() => {
-                    if (currentQuestionIndex > 0) {
-                      setCurrentQuestionIndex(prev => prev - 1);
-                      setShowHint(false);
-                      setIsLocked(false);
-                    }
-                  }}
-                  disabled={currentQuestionIndex === 0 || isLocked}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all disabled:opacity-20"
-                >
-                  <Icon.ChevronRight className="w-4 h-4 rotate-180" />
-                  Previous
-                </button>
-                <button
-                  onClick={nextQuestion}
-                  disabled={!answers[currentQuestionIndex] || isLocked}
-                  className={`group flex items-center gap-3 px-6 py-3 rounded-xl font-black text-xs transition-all
-                    ${answers[currentQuestionIndex] 
-                      ? "bg-white text-slate-950 hover:bg-blue-50 shadow-xl active:scale-95" 
-                      : "bg-slate-800/50 text-slate-600 cursor-not-allowed border border-slate-800"}`}
-                >
-                  {currentQuestionIndex === questions.length - 1 ? "Finish Session" : "Next Question"}
-                  <Icon.ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {currentStep === "evaluating" && (
-          <div className="text-center py-20 px-8">
-            <div className="relative w-20 h-20 mx-auto mb-8">
-               <div className="absolute inset-0 border-2 border-slate-800 rounded-full" />
-               <div className="absolute inset-0 border-2 border-blue-500 rounded-full border-t-transparent animate-spin" />
+               {questions[currentQuestionIndex]?.options.map((option, idx) => {
+                 const isSelected = answers[currentQuestionIndex] === option;
+                 return (
+                   <button
+                     key={idx}
+                     onClick={() => handleAnswer(option)}
+                     className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex items-center gap-4 group relative overflow-hidden h-full min-h-[70px]
+                       ${isSelected
+                         ? "bg-blue-600/10 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.1)]" 
+                         : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-600 hover:text-slate-200"}`}
+                   >
+                     <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-all duration-300
+                           ${isSelected 
+                               ? 'border-blue-500 scale-110' 
+                               : 'border-slate-700 group-hover:border-slate-500'}`}>
+                           {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"/>}
+                     </div>
+                     <span className="text-sm font-bold tracking-tight leading-snug">{option}</span>
+                     {isSelected && <div className="absolute right-3 opacity-10"><Icon.Zap className="w-6 h-6 text-blue-500" /></div>}
+                   </button>
+                 );
+               })}
              </div>
-             <h3 className="text-2xl font-bold mb-2 text-white">Analyzing Results</h3>
-             <p className="text-slate-500 text-sm mb-8">Your AI Tutor is processing your responses...</p>
-             
-             {thinkingSteps.length > 0 && (
-                <div className="max-w-md mx-auto text-left space-y-2 opacity-50">
-                  {thinkingSteps.map((step, i) => (
-                    <motion.div 
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.2 }}
-                      className="flex gap-3 text-xs font-mono"
-                    >
-                      <span className="text-blue-500">[{i + 1}]</span>
-                      <span className="text-slate-400">{step}</span>
-                    </motion.div>
-                  ))}
-                </div>
-             )}
-          </div>
-        )}
 
-        {currentStep === "result" && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-4xl mx-auto bg-slate-900/60 backdrop-blur-2xl border border-white/5 p-12 md:p-16 rounded-[48px] shadow-3xl text-center relative overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-linear-to-b from-blue-500/5 to-transparent pointer-events-none" />
-            
-            <div className="mb-14 relative z-10 flex flex-col items-center">
-               <motion.div 
-                 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-950 text-slate-500 text-[9px] font-black uppercase tracking-[0.3em] mb-6 border border-white/5"
+             <div className="flex justify-between items-center pt-8 border-t border-white/5">
+               <div className="text-[9px] text-slate-600 font-mono font-bold uppercase tracking-widest">Targeting: {questions[currentQuestionIndex]?.concepts?.slice(0, 1) || "Core Logic"}</div>
+               <button
+                 onClick={nextQuestion}
+                 disabled={!answers[currentQuestionIndex]}
+                 className={`group flex items-center gap-3 px-6 py-3 rounded-xl font-black text-xs transition-all
+                   ${answers[currentQuestionIndex] 
+                     ? "bg-white text-slate-950 hover:bg-blue-50 shadow-xl active:scale-95" 
+                     : "bg-slate-800/50 text-slate-600 cursor-not-allowed border border-slate-800"}`}
                >
-                  <Icon.CheckCircle className="w-3 h-3 text-green-500" />
-                  Session Complete
-               </motion.div>
-               <h2 className="text-6xl font-black text-white mb-4 tracking-tighter">Performance Profile</h2>
-               
-               {/* Gamification Bar */}
-               <div className="flex gap-4 mb-8">
-                  <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-full">
-                    <span className="text-sm">🔥</span>
-                    <span className="text-xs font-black text-amber-500 uppercase">{streak} Session Streak</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-full">
-                    <span className="text-sm">⭐</span>
-                    <span className="text-xs font-black text-blue-400 uppercase">+{xpEarned} XP Earned</span>
-                  </div>
-               </div>
-            </div>
- 
-            <div className="grid md:grid-cols-3 gap-6 mb-12 relative z-10 text-left">
-                {[
-                  { label: "Final Score", val: `${Math.round(score)}%`, sub: `Accuracy Rate`, color: "blue" },
-                  { label: "Proficiency", val: level, sub: "Calculated Skill Level", color: "indigo" },
-                  { label: "Subject", val: subtopic || domain, sub: "Focus Area", color: "emerald" }
-                ].map((stat, i) => (
-                  <div key={i} className="bg-slate-950/50 p-8 rounded-[32px] border border-white/5 group hover:border-blue-500/20 transition-all">
-                    <span className="text-slate-600 text-[10px] font-black uppercase tracking-[0.2em] block mb-4">{stat.label}</span>
-                    <div className="text-3xl font-black text-white mb-2 truncate tracking-tight">{stat.val}</div>
-                    <div className={`text-[10px] font-bold uppercase tracking-widest ${stat.color === 'emerald' ? 'text-emerald-500' : 'text-blue-500'}`}>{stat.sub}</div>
-                  </div>
-                ))}
-            </div>
+                 {currentQuestionIndex === questions.length - 1 ? "Finish Session" : "Next Question"}
+                 <Icon.ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+               </button>
+             </div>
+           </motion.div>
+         )}
 
-            {/* Achievement Unlocked */}
-            {badges.length > 0 && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-12 p-6 bg-linear-to-br from-blue-600/10 to-transparent border border-blue-500/20 rounded-[32px] text-left relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                   <Icon.Award className="w-24 h-24 text-blue-400" />
-                </div>
-                <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-4">🏆 Achievement Unlocked</h3>
-                <div className="flex items-center gap-4">
-                  <div className="text-4xl">{badges[0].icon}</div>
-                  <div>
-                    <div className="text-xl font-black text-white">{badges[0].name}</div>
-                    <div className="text-xs text-slate-500 font-medium">{badges[0].desc}</div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* AI Reflection Section */}
-            {!aiReflectionResponse ? (
-              <div className="mb-12 p-8 bg-slate-950/40 border border-white/5 rounded-[32px] text-left">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    <Icon.Cpu className="w-4 h-4 text-blue-400" />
-                  </div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest">AI Reflection Mode</h3>
-                </div>
-                <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                  "I noticed you struggled with {analysis?.weak_concepts?.[0] || 'some logical nuances'}. Thinking back to those questions, why do you think your reasoning diverged from the correct path?"
-                </p>
-                <textarea 
-                  value={reflectionText}
-                  onChange={(e) => setReflectionText(e.target.value)}
-                  placeholder="Analyze your thinking process here..."
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder:text-slate-600 focus:border-blue-500/50 transition-all outline-none min-h-[100px] mb-4"
-                />
-                <button 
-                  onClick={handleReflectionSubmit}
-                  disabled={!reflectionText}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-                >
-                  Submit Reflection
-                </button>
-              </div>
-            ) : (
-              <motion.div 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="mb-12 p-8 bg-blue-500/5 border border-blue-500/20 rounded-[32px] text-left"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                   <div className="text-xl">🧠</div>
-                   <h3 className="text-sm font-black text-blue-400 uppercase tracking-widest">Thought Feedback</h3>
-                </div>
-                <p className="text-slate-300 text-sm leading-relaxed italic">
-                  "{aiReflectionResponse}"
-                </p>
-              </motion.div>
-            )}
-
-            {/* Next Step Section */}
-            <div className={`mb-12 p-8 border border-white/10 rounded-[32px] bg-slate-950/20 text-left flex items-center justify-between group cursor-pointer hover:border-blue-500/40 transition-all ${!analysis?.recommended_focus ? 'opacity-50 pointer-events-none' : ''}`}
-                 onClick={() => {
-                   if (!analysis?.recommended_focus) return;
-                   const next = analysis.recommended_focus.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
-                   clearAssessmentState(assessmentId);
-                   navigate(`/assessment?domain=${domain}&subtopic=${next}`);
-                 }}
-            >
-              <div>
-                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Next Recommended Topic</h4>
-                 <div className="text-xl font-black text-white group-hover:text-blue-400 transition-colors">{analysis?.recommended_focus || "Advanced Mastery"}</div>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-xl group-hover:scale-110">
-                 <Icon.Zap className="w-5 h-5" />
-              </div>
-            </div>
- 
-            <div className="flex gap-4 justify-center flex-wrap relative z-10">
-              <button
-                onClick={() => {
-                  clearAssessmentState(assessmentId);
-                  navigate("/dashboard?mode=concept");
-                }}
-                className="px-8 py-4 rounded-2xl font-black text-sm text-slate-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 transition-all uppercase tracking-widest"
-              >
-                Exit Session
-              </button>
-
-              <button
-                onClick={() => setIsExplainingScore(true)} 
-                className="flex items-center gap-3 bg-slate-950 hover:bg-black text-blue-400 border border-blue-500/20 px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-xl uppercase tracking-widest"
-              >
-                🧠 Explain My Score
-              </button>
-              
-              <button
-                onClick={() => setCurrentStep("learning-plan")} 
-                className="px-10 py-4 bg-white text-slate-950 rounded-2xl font-black text-sm transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:bg-blue-50 uppercase tracking-widest"
-              >
-                Get Roadmap
-              </button>
-            </div>
-
-            {/* Explain Score Modal/Overlay */}
-            <AnimatePresence>
-               {isExplainingScore && (
-                 <motion.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-100 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
-                 >
-                    <motion.div 
-                       initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-                       className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-[40px] p-8 md:p-12 relative overflow-hidden shadow-4xl text-left"
-                    >
-                       <button onClick={() => setIsExplainingScore(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors">
-                          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                       </button>
-                       <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Performance Breakdown</h3>
-                       <p className="text-slate-400 text-sm mb-8">Detailed analysis of your {Math.round(score)}% score.</p>
-                       
-                       <div className="space-y-6 mb-10">
-                          <div className="p-5 rounded-2xl bg-slate-950 border border-white/5">
-                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-xs font-black text-red-400 uppercase tracking-widest">Logic Errors</span>
-                                <span className="text-lg font-black text-white">3</span>
-                             </div>
-                             <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                                You missed questions involving edge cases in {analysis?.weak_concepts?.[0] || 'Core Logic'}. This indicates a tendency to overlook boundary conditions.
-                             </p>
-                          </div>
-                          
-                          <div className="p-5 rounded-2xl bg-slate-950 border border-white/5">
-                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-xs font-black text-amber-400 uppercase tracking-widest">Concept Gaps</span>
-                                <span className="text-lg font-black text-white">2</span>
-                             </div>
-                             <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                                Shaky foundations in memory management were noted. Revisit the "Big O" complexity section to solidify these concepts.
-                             </p>
-                          </div>
-                       </div>
-                       
-                       <div className="p-6 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                          <div className="flex items-center gap-2 mb-2">
-                             <span className="text-blue-400">💡</span>
-                             <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Core Recommendation</span>
-                          </div>
-                          <p className="text-xs text-blue-100 leading-relaxed">
-                            Revise fundamentals in {analysis?.weak_concepts?.[0] || 'Data Structures'} before attempting the next advanced assessment.
-                          </p>
-                       </div>
-                    </motion.div>
-                 </motion.div>
-               )}
-            </AnimatePresence>
-          </motion.div>
-        )}
 
         {currentStep === "analysis" && analysis && (
           <motion.div
@@ -1166,7 +892,7 @@ const Assessment = () => {
                     </div>
 
                     {strategy.roadmap?.length > 0 && (
-                        <div className="rounded-2xl border border-white/5 bg-slate-950/30 p-6">
+                        <div className="bg-white/2 rounded-2xl p-6 border border-white/5 backdrop-blur-sm lg:col-span-1">
                             <div className="flex items-center justify-between mb-5">
                                 <h3 className="text-lg font-bold text-white">Personalized Roadmap</h3>
                                 <span className="text-xs text-slate-500">{strategy.roadmap.length} phases</span>

@@ -7,7 +7,6 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import Mermaid from './Mermaid';
 import { useAuth } from "../../context/AuthContext";
 import { useSettings } from "../../context/SettingsContext";
-import { api } from "../../lib/api";
 
 // Reusable code block with copy button
 const CodeBlock = ({ language, children }) => {
@@ -103,7 +102,6 @@ const Socratic = () => {
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef(null);
-    const containerRef = useRef(null);
     const fileInputRef = useRef(null);
     const cameraInputRef = useRef(null);
     const quickActions = [
@@ -134,34 +132,13 @@ const Socratic = () => {
         }
     ];
 
-    useEffect(() => { 
-        const handleKeyDown = (e) => { if (e.key === "Escape" && isOpen) setIsOpen(false); }; 
-        window.addEventListener("keydown", handleKeyDown); 
-        return () => window.removeEventListener("keydown", handleKeyDown); 
-    }, [isOpen]);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (containerRef.current && !containerRef.current.contains(e.target) && isOpen) {
-                // Only close if not clicking a portal or a specifically allowed element
-                setIsOpen(false);
-            }
-        };
-        if (isOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [isOpen]);
-
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
     }, [sessions, STORAGE_KEY]);
 
     useEffect(() => {
         if (scrollRef.current) {
-            setTimeout(() => {
-                scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-            }, 100);
+            scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
         }
     }, [messages, isLoading, thinkingSteps]);
 
@@ -244,7 +221,7 @@ const Socratic = () => {
             const userMsg = currentMessages[currentMessages.length - 1].content;
             const isTechnicalRequest = /flowchart|diagram|system design|architecture|linked list|tree|graph/i.test(userMsg);
             
-            const response = await fetch(api.chat, {
+            const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -303,22 +280,7 @@ const Socratic = () => {
                 : s
             ));
             
-                } catch (error) { 
-            console.error(error); 
-            // Add error message to chat
-            const errId = Date.now() + 2;
-            const assistantError = { 
-                role: "assistant", 
-                content: `⚠️ **Terminal Connection Lost**
-I'm having trouble reaching the main educational core. Please verify your internet connection or try again in a moment.
-
-*Technical Detail: Failed to fetch context from API.*`, 
-                id: errId,
-                isTyping: false
-            };
-            setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: [...currentMessages, assistantError] } : s));
-            if (isInterviewMode) setIsInterviewMode(false);
-        } finally { setIsLoading(false); setThinkingSteps([]); }
+        } catch (error) { console.error(error); } finally { setIsLoading(false); setThinkingSteps([]); }
     };
 
     useEffect(() => {
@@ -345,7 +307,7 @@ I'm having trouble reaching the main educational core. Please verify your intern
             handleSendMessage(null, "I want to start a strict 10-minute mock interview for a software engineering role. Please ask me the first technical question, and then wait for my response. Do not give away the answer. Act like a real interviewer.");
         }
     };
-    
+
     const createNewSession = () => {
         const newId = Date.now().toString();
         setSessions([{ 
@@ -380,9 +342,9 @@ I'm having trouble reaching the main educational core. Please verify your intern
                         initial={{ opacity: 0, scale: 0.9, y: 50, x: "-50%", left: "50%" }}
                         animate={{ 
                             opacity: 1, scale: 1, y: 0,
-                            width: isExpanded ? "min(1200px, 98vw)" : "min(820px, 100vw)",
-                            height: isExpanded ? "95vh" : "min(90vh, 760px)",
-                            top: isExpanded ? "2.5vh" : "max(0px, 5vh)",
+                            width: isExpanded ? "min(1200px, 92vw)" : "min(820px, calc(100vw - 40px))",
+                            height: isExpanded ? "85vh" : "min(78vh, 760px)",
+                            top: isExpanded ? "7.5vh" : "max(12px, 8vh)",
                             left: "50%",
                             x: "-50%",
                             right: "auto",
@@ -391,12 +353,12 @@ I'm having trouble reaching the main educational core. Please verify your intern
                         exit={{ opacity: 0, scale: 0.9, y: 50, x: "-50%", left: "50%" }}
                         transition={{ type: "spring", damping: 30, stiffness: 200 }}
                         // Enable pointer events for the actual chat window
-                        className="absolute bg-slate-950/98 border border-white/10 rounded-t-[28px] sm:rounded-[28px] shadow-[0_0_80px_rgba(0,0,0,0.9)] flex overflow-hidden pointer-events-auto"
+                        className="absolute bg-slate-950/98 border border-white/10 rounded-[28px] shadow-[0_0_80px_rgba(0,0,0,0.9)] flex overflow-hidden pointer-events-auto"
                     >
                         {/* SIDEBAR */}
                         <AnimatePresence>
-                            {(isExpanded) && (
-                                <motion.div initial={{ width: 0 }} animate={{ width: 280 }} className="h-full border-r border-white/5 bg-[linear-gradient(180deg,rgba(8,14,27,0.98),rgba(3,7,18,0.95))] hidden md:flex flex-col shrink-0">
+                            {isExpanded && (
+                                <motion.div initial={{ width: 0 }} animate={{ width: 280 }} className="h-full border-r border-white/5 bg-[linear-gradient(180deg,rgba(8,14,27,0.98),rgba(3,7,18,0.95))] flex flex-col shrink-0">
                                     <div className="p-4 pt-5">
                                         <div className="rounded-3xl border border-cyan-500/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_55%),rgba(255,255,255,0.02)] p-4">
                                             <div className="flex items-start justify-between gap-3">

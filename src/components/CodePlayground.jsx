@@ -30,7 +30,7 @@ const CodePlayground = ({
     onRunComplete,
     actionSlot = null
 }) => {
-    const [code, setCode] = useState(initialCode || "print('Hello, AI Tutor!')");
+    const [code, setCode] = useState(initialCode || "");
     const [output, setOutput] = useState("");
     const [isRunning, setIsRunning] = useState(false);
     const [lang, setLang] = useState(language || "python");
@@ -40,8 +40,9 @@ const CodePlayground = ({
     const currentInput = stdinValue ?? stdin;
 
     useEffect(() => {
-        setCode(initialCode || "print('Hello, AI Tutor!')");
+        setCode(initialCode || "");
     }, [initialCode]);
+
 
     useEffect(() => {
         setLang(language || "python");

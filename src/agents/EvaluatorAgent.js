@@ -1,8 +1,17 @@
-import { api } from "../lib/api";
-
+/**
+ * Evaluator Agent (Frontend Wrapper)
+ * Responsibility: Call the backend API for answer processing (evaluation + gap analysis).
+ * 
+ * @param {string} question
+ * @param {string} correctAnswer
+ * @param {string} studentAnswer
+ * @param {string} topic
+ * @param {string} studentLevel
+ * @returns {Promise<object>} { evaluation: {...}, knowledgeGap: {...} }
+ */
 export const evaluateAnswer = async (question, correctAnswer, studentAnswer, topic = "General", studentLevel = "Intermediate") => {
   try {
-    const response = await fetch(api.processAnswer, {
+    const response = await fetch("/api/process-answer", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

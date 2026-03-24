@@ -8,16 +8,25 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user ?? null);
-      setLoading(false);
+    // Safety timeout to prevent permanent "not loading" state
+    const timeout = setTimeout(() => {
+        if (loading) setLoading(false);
+    }, 3000);
+
+    const checkSession = async () => {
+        try {
+            const { data } = await supabase.auth.getSession();
+            setUser(data?.session?.user || null);
+        } catch (err) {
+            console.error("Auth check failed:", err);
+        } finally {
+            setLoading(false);
+            clearTimeout(timeout);
+        }
     };
 
-    getSession();
+    checkSession();
 
-    // Listen for changes
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
@@ -26,7 +35,8 @@ export const AuthProvider = ({ children }) => {
     );
 
     return () => {
-      listener.subscription.unsubscribe();
+      clearTimeout(timeout);
+      listener?.subscription?.unsubscribe();
     };
   }, []);
 

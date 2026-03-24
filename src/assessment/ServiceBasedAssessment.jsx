@@ -303,7 +303,13 @@ const ServiceBasedAssessment = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans selection:bg-blue-500/30">
+    <div 
+      onClick={() => {
+        clearAssessmentState(STORAGE_KEY);
+        navigate('/');
+      }}
+      className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans selection:bg-blue-500/30 cursor-pointer"
+    >
       
       {/* Background Grid with Fade */}
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center mask-[linear-gradient(180deg,white,rgba(255,255,255,0))] pointer-events-none opacity-50" />
@@ -358,7 +364,8 @@ const ServiceBasedAssessment = () => {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-4xl mx-auto mt-12 mb-12"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-4xl mx-auto mt-12 mb-12 cursor-default"
           >
             <div className="text-center mb-16">
                 <span className="inline-block px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold uppercase tracking-wider mb-6 border border-blue-500/20">
@@ -425,7 +432,8 @@ const ServiceBasedAssessment = () => {
         {step === "test" && (
             <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-140px)]"
+                onClick={(e) => e.stopPropagation()}
+                className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-140px)] cursor-default"
             >
                 {/* Sidebar Navigation */}
                 <div className="w-full lg:w-72 flex flex-col gap-4">
@@ -549,7 +557,8 @@ const ServiceBasedAssessment = () => {
         {step === "result" && (
             <motion.div 
                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-               className="w-full max-w-4xl mx-auto mt-8 bg-[#0A1120] border border-slate-800 p-12 rounded-2xl shadow-xl text-center"
+               onClick={(e) => e.stopPropagation()}
+               className="w-full max-w-4xl mx-auto mt-8 bg-[#0A1120] border border-slate-800 p-12 rounded-2xl shadow-xl text-center cursor-default"
             >
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     
@@ -568,8 +577,8 @@ const ServiceBasedAssessment = () => {
                         
                         <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold border
                              ${tier === 'Advanced' ? 'border-purple-500/20 text-purple-300 bg-purple-500/10' : 
-                               tier === 'Intermediate' ? 'border-blue-500/20 text-blue-300 bg-blue-500/10' : 
-                               'border-orange-500/20 text-orange-300 bg-orange-500/10'}`}>
+                                tier === 'Intermediate' ? 'border-blue-500/20 text-blue-300 bg-blue-500/10' : 
+                                'border-orange-500/20 text-orange-300 bg-orange-500/10'}`}>
                             <span className={`w-2 h-2 rounded-full ${
                                 tier === 'Advanced' ? 'bg-purple-400' : 
                                 tier === 'Intermediate' ? 'bg-blue-400' : 'bg-orange-400'
@@ -651,7 +660,8 @@ const ServiceBasedAssessment = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-4xl mx-auto mt-8 bg-[#0A1120] rounded-2xl border border-slate-800 p-8 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-4xl mx-auto mt-8 bg-[#0A1120] rounded-2xl border border-slate-800 p-8 shadow-xl cursor-default"
           >
              {/* Header */}
              <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-800">
@@ -768,7 +778,7 @@ const ServiceBasedAssessment = () => {
                         ))}
                     </div>
                 </div>
-            )}
+             )}
 
              <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
                   <button
@@ -791,7 +801,8 @@ const ServiceBasedAssessment = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-slate-900/50 backdrop-blur-sm border border-white/10 p-10 rounded-3xl shadow-2xl text-center max-w-4xl mx-auto"
+            onClick={(e) => e.stopPropagation()}
+            className="bg-slate-900/50 backdrop-blur-sm border border-white/10 p-10 rounded-3xl shadow-2xl text-center max-w-4xl mx-auto cursor-default"
           >
              <h2 className="text-4xl font-bold mb-4 text-white">Recommended Strategy</h2>
              <p className="text-slate-300 text-lg mb-10">

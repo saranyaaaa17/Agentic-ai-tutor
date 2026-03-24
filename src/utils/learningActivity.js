@@ -100,27 +100,3 @@ export const getRecentMilestones = (limit = 3) => {
       color: colorByType[activity.type] || "text-purple-400",
     }));
 };
-export const getStreakCount = () => {
-  const activities = loadActivityLog();
-  if (activities.length === 0) return 0;
-
-  const dates = [...new Set(activities.map(a => startOfDay(new Date(a.timestamp)).getTime()))]
-    .sort((a, b) => b - a);
-
-  let streak = 0;
-  const oneDayMs = 24 * 60 * 60 * 1000;
-  let currentRef = startOfDay(new Date()).getTime();
-
-  // If last activity wasn't today or yesterday, streak is 0
-  if (dates[0] < currentRef - oneDayMs) return 0;
-
-  for (let i = 0; i < dates.length; i++) {
-    if (dates[i] === currentRef || dates[i] === currentRef - oneDayMs) {
-      streak++;
-      currentRef = dates[i];
-    } else {
-      break;
-    }
-  }
-  return streak;
-};

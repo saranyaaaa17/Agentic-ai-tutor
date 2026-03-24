@@ -753,7 +753,7 @@ const ProductBasedAssessment = () => {
                             <span className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] block mb-2">Technical Score</span>
                             <span className="text-4xl font-black text-white">{Math.round(readinessScore)}%</span>
                             <div className="h-1 w-full bg-slate-800 rounded-full mt-3 overflow-hidden">
-                                <div className={`h-full ${readinessScore > 70 ? 'bg-green-500' : 'bg-orange-500'} w-[${Math.round(readinessScore)}%]`} />
+                                <div className={`h-full ${readinessScore > 70 ? 'bg-green-500' : 'bg-orange-500'}`} style={{ width: `${Math.round(readinessScore)}%` }} />
                             </div>
                         </div>
 

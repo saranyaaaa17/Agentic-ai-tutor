@@ -595,7 +595,13 @@ const ProblemSolvingAssessment = () => {
   const domainTitle = getDomainTitle();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans tracking-wide selection:bg-green-500/30">
+    <div 
+      onClick={() => {
+        clearAssessmentState(assessmentId);
+        navigate('/');
+      }}
+      className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans tracking-wide selection:bg-green-500/30 cursor-pointer"
+    >
       
       {/* Background Grid with Fade */}
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] pointer-events-none opacity-40" />
@@ -648,7 +654,8 @@ const ProblemSolvingAssessment = () => {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-4xl mx-auto mt-12 mb-12"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-4xl mx-auto mt-12 mb-12 cursor-default"
           >
             <div className="text-center mb-16">
                  <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/10 text-green-400 text-xs font-bold uppercase tracking-wider">
@@ -707,7 +714,8 @@ const ProblemSolvingAssessment = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="w-full max-w-3xl mx-auto bg-[#0A1120] border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-3xl mx-auto bg-[#0A1120] border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl relative overflow-hidden cursor-default"
           >
              {/* Progress Bar */}
              <div className="absolute top-0 left-0 h-1 bg-slate-800 w-full">
@@ -745,7 +753,7 @@ const ProblemSolvingAssessment = () => {
                     <div className="text-left min-w-[80px]">
                          <span className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1 leading-none">Progress</span>
                          <div className="flex flex-col gap-1.5 mt-0.5">
-                            <span className="text-xs font-black text-white leading-none">{Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}%</span>
+                            <span className="text-xs font-black text-white leading-none">{Math.round((currentQuestionIndex / questions.length) * 100)}%</span>
                             <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
                                 <motion.div 
                                     initial={{ width: 0 }}
@@ -983,7 +991,8 @@ const ProblemSolvingAssessment = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-4xl mx-auto bg-[#0A1120] border border-slate-800 p-12 rounded-2xl shadow-xl text-center"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-4xl mx-auto bg-[#0A1120] border border-slate-800 p-12 rounded-2xl shadow-xl text-center cursor-default"
           >
              <div className="mb-12">
                <span className="inline-block px-3 py-1 rounded-full bg-slate-800 text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">

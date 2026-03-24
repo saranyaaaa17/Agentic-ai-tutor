@@ -9,7 +9,7 @@ import { companyConfig } from "../lib/companyConfig";
 import { getDailyChallengeCard } from "../utils/dailyChallenge";
 import { getLearningVelocityData, getRecentMilestones } from "../utils/learningActivity";
 
-/* ?????? Reusable SVG icon components ????????????????????????????????????????????????????????????????????????????????????????????? */
+/* Reusable SVG icon components */
 const Icon = {
   Grid: (p) => (
     <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -227,8 +227,7 @@ const calculateCompanyFit = (companyId, masteryProfile) => {
 
 
 const Dashboard = () => {
-  const searchRef = useRef(null);
-  const { appearance: theme, accentColor } = useSettings();
+  const { appearance, setAppearance, accentColor, setAccentColor } = useSettings();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -248,7 +247,6 @@ const Dashboard = () => {
   const [isTraceMinimized, setIsTraceMinimized] = useState(true);
   const [learningVelocity, setLearningVelocity] = useState(() => getLearningVelocityData());
   const [recentMilestones, setRecentMilestones] = useState(() => getRecentMilestones());
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [agentStatus, setAgentStatus] = useState({
     coordinator: "connecting...",
@@ -261,22 +259,6 @@ const Dashboard = () => {
   const [notification, setNotification] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
-  useEffect(() => {
-    const handleSearchClickOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSearchSuggestions(false);
-      }
-    };
-    const handleSearchEsc = (e) => {
-      if (e.key === "Escape") setShowSearchSuggestions(false);
-    };
-    document.addEventListener("mousedown", handleSearchClickOutside);
-    document.addEventListener("keydown", handleSearchEsc);
-    return () => {
-      document.removeEventListener("mousedown", handleSearchClickOutside);
-      document.removeEventListener("keydown", handleSearchEsc);
-    };
-  }, []);
 
   const [feedMessages, setFeedMessages] = useState([
     "Welcome! Let's start learning.",
@@ -339,7 +321,7 @@ const Dashboard = () => {
     }
   };
 
-    const searchableData = [
+  const searchableData = [
     { label: "Data Structures", path: "/assessment?domain=dsa", category: "Learn" },
     { label: "Algorithms", path: "/assessment?domain=dsa", category: "Learn" },
     { label: "Machine Learning", path: "/assessment?domain=ml", category: "Learn" },
@@ -347,24 +329,45 @@ const Dashboard = () => {
     { label: "DBMS", path: "/assessment?domain=dbms", category: "Learn" },
     { label: "Operating Systems", path: "/assessment?domain=os", category: "Learn" },
     { label: "Python Programming", path: "/assessment?domain=programming&subtopic=python", category: "Learn" },
-    { label: "C++ Test / Challenges", path: "/problem-assessment?domain=programming-problems&subtopic=cpp-problems", category: "Practice" },
-    { label: "Java Programming", path: "/assessment?domain=programming&subtopic=java", category: "Learn" },
+    { label: "C++ Challenges", path: "/problem-assessment?domain=programming-problems&subtopic=cpp-problems", category: "Practice" },
     { label: "SQL Challenges", path: "/problem-assessment?domain=sql-problems", category: "Practice" },
     { label: "Logical Reasoning", path: "/problem-assessment?domain=logic-problems", category: "Practice" },
-    { label: "Product-Based Companies", path: "/product-selection", category: "Exams" },
-    { label: "Service-Based Companies", path: "/service-selection", category: "Exams" },
     { label: "Interview Prep", path: "/dashboard?mode=exam", category: "Exams" },
   ];
 
-    const filteredSuggestions = searchTerm.trim() === "" 
+  const filteredSuggestions = searchTerm.trim() === "" 
     ? searchableData 
-    : searchableData.filter(item => {
-        const query = searchTerm.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const label = item.label.toLowerCase().replace(/[^a-z0-9]/g, "");
-        return label.includes(query);
-      });
-    ;
-    // initData removal (not defined)
+    : searchableData.filter(item => 
+        item.label.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+  useEffect(() => {
+    const initData = async () => {
+        let profileData = { 
+            "Logic": 0.0, 
+            "Syntax": 0.0, 
+            "Algorithms": 0.0, 
+            "Systems": 0.0, 
+            "Fundamentals": 0.0 
+        };
+        let recommendedFocus = "Initialize Assessment";
+
+        if (user) {
+            const cloudMastery = await fetchMasteryFromSupabase(user.id);
+            if (cloudMastery && Object.keys(cloudMastery).length > 0) {
+               profileData = { ...profileData, ...cloudMastery };
+               recommendedFocus = Object.entries(cloudMastery).sort((a,b) => a[1] - b[1])[0][0] || "Foundational";
+            }
+        }
+        setAgentInsight({
+            analysis: { 
+                mastery_profile: profileData,
+                recommended_focus: recommendedFocus
+            },
+            strategy: { session_goal: { primary_objective: "Progress Continuation" } }
+        });
+    };
+    initData();
 
     const pollStatus = async () => {
         try {
@@ -375,7 +378,7 @@ const Dashboard = () => {
             setAgentStatus(prev => ({ ...prev, coordinator: "offline" }));
         }
     };
-   useEffect(() => { pollStatus();
+    pollStatus();
     const statusInterval = setInterval(pollStatus, 15000);
     return () => clearInterval(statusInterval);
   }, [user]);
@@ -384,7 +387,6 @@ const Dashboard = () => {
     setActiveTab(tabId);
     setSearchTerm("");
     setSelectedDomain(null);
-    setIsSidebarOpen(false); // Close sidebar on mobile after selection
     navigate(tabId === "progress" ? "/dashboard" : `/dashboard?mode=${tabId}`);
     window.scrollTo(0, 0);
   };
@@ -419,9 +421,9 @@ const Dashboard = () => {
   };
 
   const toggleTheme = () => {
-    const next = theme === 'glass' ? 'dark' : 'glass';
-    setTheme(next);
-    localStorage.setItem('theme', next);
+    const next = appearance === 'glass' ? 'dark' : 'glass';
+    setAppearance(next);
+    localStorage.setItem('appearance', next);
   };
 
   const updateAccent = (color) => {
@@ -529,23 +531,10 @@ const Dashboard = () => {
 
   return (
     <div className={`h-screen text-slate-200 flex font-sans overflow-hidden transition-all duration-700
-      ${theme === 'glass' ? 'bg-[#050811]' : 'bg-slate-950'}`}>
+      ${appearance === 'glass' ? 'bg-[#050811]' : 'bg-slate-950'}`}>
       
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-55 lg:hidden"
-          />
-        )}
-      </AnimatePresence>
-
       {/* Dynamic Background Effects */}
-      {theme === 'glass' && (
+      {appearance === 'glass' && (
          <div className="fixed inset-0 pointer-events-none overflow-hidden">
             <div className={`absolute -top-20 -left-20 w-[600px] h-[600px] rounded-full blur-[160px] opacity-15 ${currentTheme.bar}`} />
             <div className={`absolute -bottom-20 -right-20 w-[600px] h-[600px] rounded-full blur-[160px] opacity-15 ${currentTheme.bar}`} />
@@ -554,9 +543,8 @@ const Dashboard = () => {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed lg:relative h-screen flex flex-col z-60 shrink-0 transition-all duration-500
-        ${isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0 w-64 lg:block'}
-        ${theme === 'glass' ? 'bg-slate-950/90 lg:bg-slate-950/40 backdrop-blur-3xl border-r border-white/5' : 'bg-slate-950 border-r border-slate-900'}`}>
+      <aside className={`w-64 h-screen flex flex-col z-50 shrink-0 transition-all duration-500
+        ${appearance === 'glass' ? 'bg-slate-950/40 backdrop-blur-3xl border-r border-white/5' : 'bg-slate-950 border-r border-slate-900'}`}>
          
          <div className="p-8 pb-10">
             <div className="flex items-center gap-3 group px-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
@@ -567,7 +555,7 @@ const Dashboard = () => {
             </div>
          </div>
 
-         <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+         <nav className="flex-1 px-4 space-y-1">
             <div className="px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4">Core Pathways</div>
             {navItems.map((item) => (
                <button
@@ -581,7 +569,7 @@ const Dashboard = () => {
                   <div className={`${activeTab === item.id ? currentTheme.accent : 'group-hover:text-slate-300'} transition-colors`}>
                      {item.icon}
                   </div>
-                  <span className="text-sm font-bold">{item.label}</span>
+                  <span className="text-xs font-bold">{item.label}</span>
                   {activeTab === item.id && (
                      <motion.div layoutId="nav-pill" className={`ml-auto w-1 h-4 rounded-full ${currentTheme.bar}`} />
                   )}
@@ -590,16 +578,16 @@ const Dashboard = () => {
             
             <div className="pt-8 space-y-1">
                <div className="px-4 mb-2 text-[10px] font-bold text-slate-600 uppercase">Secondary</div>
-               <button onClick={() => { setIsSidebarOpen(false); navigate("/settings"); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-white hover:bg-white/5">
+               <button onClick={() => navigate("/settings")} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-white hover:bg-white/5">
                   <Icon.Settings className="w-4 h-4" />
-                  <span className="text-sm font-bold">Settings</span>
+                  <span className="text-xs font-bold">Settings</span>
                </button>
             </div>
          </nav>
 
          <div className="p-6 border-t border-white/5 space-y-4">
            <button 
-             onClick={() => { setIsSidebarOpen(false); navigate('/profile'); }} 
+             onClick={() => navigate('/profile')} 
              className="w-full group/profile flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 transition-all text-left"
            >
               <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-sm font-black text-blue-400 group-hover/profile:border-blue-500/50 transition-all">
@@ -607,7 +595,7 @@ const Dashboard = () => {
               </div>
               <div className="flex-1 min-w-0">
                  <div className="text-sm font-bold text-white truncate">{displayName}</div>
-                 <div className="text-[10px] text-slate-500 truncate group-hover/profile:text-blue-400 transition-colors uppercase font-black">Student Learner</div>
+                 <div className="text-[10px] text-slate-500 truncate group-hover/profile:text-blue-400 transition-colors uppercase font-black">Pro Member</div>
               </div>
            </button>
            <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-400/5 transition-all text-[10px] font-black uppercase tracking-widest">
@@ -618,34 +606,27 @@ const Dashboard = () => {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8 bg-slate-950/40 backdrop-blur-xl shrink-0 z-40">
+        <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-slate-950/40 backdrop-blur-xl shrink-0 z-40">
            <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest flex-1">
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors"
-                title="Open Menu"
-              >
-                <Icon.Grid className="w-6 h-6" />
-              </button>
-              <span className="text-slate-500 hidden md:inline">Platform</span>
-              <span className="text-slate-300 hidden md:inline">/</span>
-              <span className="text-blue-400 truncate">{navItems.find(n => n.id === activeTab)?.label}</span>
+              <span className="text-slate-500">Platform</span>
+              <span className="text-slate-300">/</span>
+              <span className="text-blue-400">{navItems.find(n => n.id === activeTab)?.label}</span>
            </div>
 
            {/* Search Bar */}
-           <div ref={searchRef} className="flex-2 max-w-md mx-2 md:mx-4 relative group">
+           <div className="flex-1 max-w-md mx-4 relative group">
                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                    <Icon.Search className="w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                 </div>
                  <input 
                    type="text"
-                   placeholder="Search... (Ctrl+K)"
+                   placeholder="Search anything... (Ctrl + K)"
                    value={searchTerm}
                    onChange={(e) => setSearchTerm(e.target.value)}
                    onFocus={() => setShowSearchSuggestions(true)}
-                   className="w-full bg-slate-950/40 border border-white/5 rounded-xl py-2 pl-10 pr-10 md:pr-16 text-sm focus:outline-none focus:border-white/20 transition-all placeholder-slate-600"
+                   className="w-full bg-slate-950/40 border border-white/5 rounded-xl py-2 pl-10 pr-16 text-sm focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/5 transition-all placeholder-slate-600"
                  />
-                 <div className="absolute inset-y-0 right-3 flex items-center gap-1 md:gap-2">
+                 <div className="absolute inset-y-0 right-3 flex items-center gap-2">
                     <button 
                       onClick={startVoiceSearch}
                       className="text-slate-600 hover:text-blue-400 transition-colors"
@@ -653,7 +634,7 @@ const Dashboard = () => {
                     >
                        <Icon.Zap className="w-4 h-4" />
                     </button>
-                    <div className="hidden md:block px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-[10px] font-mono text-slate-500">K</div>
+                    <div className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-[10px] font-mono text-slate-500">K</div>
                  </div>
                 
                 {showSearchSuggestions && searchTerm.length > 0 && (
@@ -1023,7 +1004,7 @@ const Dashboard = () => {
                       </button>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {(activeTab === 'concept' ? conceptDomains : problemDomains)
-                          .find(d => d.id === selectedDomain)?.subDomains.map(sub => (
+                          .find(d => d.id === selectedDomain)?.subDomains?.map(sub => (
                           <button key={sub.id} onClick={() => navigate(`${activeTab === 'concept' ? '/assessment' : '/problem-assessment'}?domain=${selectedDomain}&subtopic=${sub.id}`)}
                             className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl hover:border-blue-500/50 transition-all text-left group">
                             <div className="flex items-center justify-between mb-4">
@@ -1105,18 +1086,18 @@ const Dashboard = () => {
                            
                            <div className="space-y-8">
                               <div>
-                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-4">Workspace Theme</label>
+                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-4">Workspace appearance</label>
                                  <div className="grid grid-cols-2 gap-4">
                                     <button 
-                                      onClick={() => setTheme('glass')}
-                                      className={`p-4 rounded-2xl border transition-all text-left group ${theme === 'glass' ? `${currentTheme.bg} ${currentTheme.border} border-opacity-100` : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
+                                      onClick={() => setAppearance('glass')}
+                                      className={`p-4 rounded-2xl border transition-all text-left group ${appearance === 'glass' ? `${currentTheme.bg} ${currentTheme.border} border-opacity-100` : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
                                     >
                                        <div className="text-sm font-bold text-white mb-1">Cyber Glass</div>
                                        <div className="text-[10px] text-slate-500">Translucent & Vibrant</div>
                                     </button>
                                     <button 
-                                      onClick={() => setTheme('dark')}
-                                      className={`p-4 rounded-2xl border transition-all text-left group ${theme === 'dark' ? 'bg-slate-800 border-white/40' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
+                                      onClick={() => setAppearance('dark')}
+                                      className={`p-4 rounded-2xl border transition-all text-left group ${appearance === 'dark' ? 'bg-slate-800 border-white/40' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
                                     >
                                        <div className="text-sm font-bold text-white mb-1">Deep Dark</div>
                                        <div className="text-[10px] text-slate-500">Solid & High Contrast</div>
@@ -1219,7 +1200,7 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
       {/* Agent Activity Trace Widget */}
-      <div className="fixed bottom-8 left-4 lg:left-72 z-60 flex flex-col items-end pointer-events-none transition-all duration-500">
+      <div className="fixed bottom-8 left-80 z-60 flex flex-col items-end pointer-events-none">
          <AnimatePresence>
             {activeTab !== 'settings' && (
                <motion.div 
@@ -1229,12 +1210,12 @@ const Dashboard = () => {
                  className="pointer-events-auto"
                >
                   <div className={`bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-3xl transition-all duration-500 pointer-events-auto
-                      ${isTraceMinimized ? 'w-56 h-12 flex items-center p-3 rounded-full cursor-pointer hover:border-blue-500/50' : 'w-80 h-auto'}`}
+                      ${isTraceMinimized ? 'w-48 h-12 flex items-center p-3 rounded-full cursor-pointer hover:border-blue-500/50' : 'w-80 h-auto'}`}
                       onClick={() => isTraceMinimized && setIsTraceMinimized(false)}>
                       <div className="flex items-center justify-between pointer-events-none w-full">
                          <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full animate-pulse ${currentTheme.bar}`} />
-                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{isTraceMinimized ? "Trace" : "Agent Analysis"}</span>
+                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Agent Analysis</span>
                          </div>
                          <button 
                             className="pointer-events-auto text-slate-600 hover:text-white transition-colors"

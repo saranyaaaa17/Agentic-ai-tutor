@@ -14,9 +14,11 @@ const AgentSystemPanel = ({ compact = false, className = "" }) => {
   useEffect(() => {
     let active = true;
 
+    const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:8000" : "");
+
     const loadStatus = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/status");
+        const response = await fetch(`${API_BASE_URL}/api/status`);
         if (!response.ok) {
           throw new Error("Status endpoint unavailable");
         }

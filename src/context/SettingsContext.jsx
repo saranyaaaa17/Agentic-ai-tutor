@@ -7,7 +7,13 @@ export const SettingsProvider = ({ children }) => {
     const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accent') || 'blue');
     const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'en-US');
     const [spokenLanguage, setSpokenLanguage] = useState(() => localStorage.getItem('spokenLanguage') || 'en-US');
-    const [socraticMode, setSocraticMode] = useState(() => JSON.parse(localStorage.getItem('socraticMode') || 'false'));
+    const [socraticMode, setSocraticMode] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('socraticMode') || 'false');
+        } catch (_) {
+            return false;
+        }
+    });
 
     const isDark = appearance === 'dark' || (appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
     const resolvedTheme = isDark ? 'dark' : 'light';
@@ -16,10 +22,8 @@ export const SettingsProvider = ({ children }) => {
         localStorage.setItem('appearance', appearance);
         // Apply theme to document
         if (isDark) {
-            document.documentElement.classList.add('dark');
             document.body.classList.remove('light');
         } else {
-            document.documentElement.classList.remove('dark');
             document.body.classList.add('light');
         }
     }, [appearance, isDark]);
