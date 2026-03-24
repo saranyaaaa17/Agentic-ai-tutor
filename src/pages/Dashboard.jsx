@@ -363,7 +363,7 @@ const Dashboard = () => {
         const label = item.label.toLowerCase().replace(/[^a-z0-9]/g, "");
         return label.includes(query);
       });
-    };
+    ;
     initData();
 
     const pollStatus = async () => {
@@ -375,7 +375,7 @@ const Dashboard = () => {
             setAgentStatus(prev => ({ ...prev, coordinator: "offline" }));
         }
     };
-    pollStatus();
+   useEffect(() => { pollStatus();
     const statusInterval = setInterval(pollStatus, 15000);
     return () => clearInterval(statusInterval);
   }, [user]);
