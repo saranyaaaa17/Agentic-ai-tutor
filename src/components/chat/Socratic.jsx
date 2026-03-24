@@ -103,6 +103,7 @@ const Socratic = () => {
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef(null);
+    const containerRef = useRef(null);
     const fileInputRef = useRef(null);
     const cameraInputRef = useRef(null);
     const quickActions = [
@@ -132,6 +133,25 @@ const Socratic = () => {
             className: "hover:bg-indigo-500/10 hover:border-indigo-500/50 hover:text-indigo-400"
         }
     ];
+
+    useEffect(() => { 
+        const handleKeyDown = (e) => { if (e.key === "Escape" && isOpen) setIsOpen(false); }; 
+        window.addEventListener("keydown", handleKeyDown); 
+        return () => window.removeEventListener("keydown", handleKeyDown); 
+    }, [isOpen]);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target) && isOpen) {
+                // Only close if not clicking a portal or a specifically allowed element
+                setIsOpen(false);
+            }
+        };
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isOpen]);
 
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
@@ -289,10 +309,10 @@ const Socratic = () => {
             const errId = Date.now() + 2;
             const assistantError = { 
                 role: "assistant", 
-                content: "⚠️ **Terminal Connection Lost**
+                content: `⚠️ **Terminal Connection Lost**
 I'm having trouble reaching the main educational core. Please verify your internet connection or try again in a moment.
 
-*Technical Detail: Failed to fetch context from API.*", 
+*Technical Detail: Failed to fetch context from API.*`, 
                 id: errId,
                 isTyping: false
             };

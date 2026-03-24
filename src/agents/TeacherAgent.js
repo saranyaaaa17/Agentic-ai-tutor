@@ -88,7 +88,7 @@ export const TeacherAgent = {
     console.log(`[TeacherAgent] 🤖 Requesting AI Assessment (${numQuestions} questions) for topic: "${topic}"...`);
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 35000); // 120s timeout
 
       // Anti-Context: inject recent questions from session storage
       let recentQuestions = [];
@@ -229,5 +229,46 @@ export const TeacherAgent = {
       console.error("Strategy generation failed:", error);
       return null;
     }
-  }
+  },
+    
+    /**
+     * Call the Socratic chat endpoint for conversation.
+     */
+    chat: async (message, history = [], complexity = 3, socraticMode = true) => {
+        try {
+            const res = await fetch(api.chat, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message, history, complexity, socratic_mode: socraticMode })
+            });
+            if (!res.ok) throw new Error(`Chat API Error: ${res.statusText}`);
+            return await res.json();
+        } catch (error) {
+            console.error("[TeacherAgent] ❌ Chat Failed:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Generate an interview question based on history or topic.
+     */
+    generateInterviewQuestion: async (topic, history = []) => {
+        try {
+            const res = await fetch(api.chat, { // Interview is currently handled via Chat router in backend
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    message: `SYSTEM: Act as a technical interviewer. Ask me a single tough technical question based on the topic: ${topic}.`, 
+                    history, 
+                    complexity: 5, 
+                    socratic_mode: false 
+                })
+            });
+            if (!res.ok) throw new Error(`Interview API Error: ${res.statusText}`);
+            return await res.json();
+        } catch (error) {
+            console.error("[TeacherAgent] ❌ Interview Generation Failed:", error);
+            throw error;
+        }
+    }
 };

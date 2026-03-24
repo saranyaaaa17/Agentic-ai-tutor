@@ -52,8 +52,12 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+        let formattedPhone = phone.trim();
+    if (/^\d{10}$/.test(formattedPhone)) formattedPhone = "+91" + formattedPhone;
+    else if (/^\d{12}$/.test(formattedPhone) && formattedPhone.startsWith("91")) formattedPhone = "+" + formattedPhone;
+    
     const { error } = await supabase.auth.signInWithOtp({
-      phone: phone,
+      phone: formattedPhone,
     });
     if (error) {
       setError(error.message);
@@ -68,7 +72,7 @@ const Login = () => {
     setLoading(true);
     setError(null);
     const { error } = await supabase.auth.verifyOtp({
-      phone: phone,
+      /*_PHONE_*/
       token: otp,
       type: 'sms',
     });

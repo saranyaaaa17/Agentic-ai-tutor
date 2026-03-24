@@ -227,6 +227,7 @@ const calculateCompanyFit = (companyId, masteryProfile) => {
 
 
 const Dashboard = () => {
+  const searchRef = useRef(null);
   const { appearance: theme, accentColor } = useSettings();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -260,6 +261,22 @@ const Dashboard = () => {
   const [notification, setNotification] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  useEffect(() => {
+    const handleSearchClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSearchSuggestions(false);
+      }
+    };
+    const handleSearchEsc = (e) => {
+      if (e.key === "Escape") setShowSearchSuggestions(false);
+    };
+    document.addEventListener("mousedown", handleSearchClickOutside);
+    document.addEventListener("keydown", handleSearchEsc);
+    return () => {
+      document.removeEventListener("mousedown", handleSearchClickOutside);
+      document.removeEventListener("keydown", handleSearchEsc);
+    };
+  }, []);
 
   const [feedMessages, setFeedMessages] = useState([
     "Welcome! Let's start learning.",
@@ -339,37 +356,13 @@ const Dashboard = () => {
     { label: "Interview Prep", path: "/dashboard?mode=exam", category: "Exams" },
   ];
 
-  const filteredSuggestions = searchTerm.trim() === "" 
+    const filteredSuggestions = searchTerm.trim() === "" 
     ? searchableData 
-    : searchableData.filter(item => 
-        item.label.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-  useEffect(() => {
-    const initData = async () => {
-        let profileData = { 
-            "Logic": 0.0, 
-            "Syntax": 0.0, 
-            "Algorithms": 0.0, 
-            "Systems": 0.0, 
-            "Fundamentals": 0.0 
-        };
-        let recommendedFocus = "Initialize Assessment";
-
-        if (user) {
-            const cloudMastery = await fetchMasteryFromSupabase(user.id);
-            if (cloudMastery && Object.keys(cloudMastery).length > 0) {
-               profileData = { ...profileData, ...cloudMastery };
-               recommendedFocus = Object.entries(cloudMastery).sort((a,b) => a[1] - b[1])[0][0] || "Foundational";
-            }
-        }
-        setAgentInsight({
-            analysis: { 
-                mastery_profile: profileData,
-                recommended_focus: recommendedFocus
-            },
-            strategy: { session_goal: { primary_objective: "Progress Continuation" } }
-        });
+    : searchableData.filter(item => {
+        const query = searchTerm.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const label = item.label.toLowerCase().replace(/[^a-z0-9]/g, "");
+        return label.includes(query);
+      });
     };
     initData();
 
@@ -640,7 +633,7 @@ const Dashboard = () => {
            </div>
 
            {/* Search Bar */}
-           <div className="flex-2 max-w-md mx-2 md:mx-4 relative group">
+           <div ref={searchRef} className="flex-2 max-w-md mx-2 md:mx-4 relative group">
                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                    <Icon.Search className="w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                 </div>
