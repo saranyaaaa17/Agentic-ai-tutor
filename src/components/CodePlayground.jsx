@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { executeCode } from "../utils/codeExecution";
 
@@ -17,6 +16,7 @@ const Icon = {
             <line x1="1" y1="15" x2="4" y2="15" />
         </svg>
     )
+    
 };
 
 const CodePlayground = ({
