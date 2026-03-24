@@ -72,7 +72,7 @@ const Login = () => {
     setLoading(true);
     setError(null);
     const { error } = await supabase.auth.verifyOtp({
-      /*_PHONE_*/
+      phone: phone,
       token: otp,
       type: 'sms',
     });

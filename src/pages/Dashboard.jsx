@@ -364,7 +364,7 @@ const Dashboard = () => {
         return label.includes(query);
       });
     ;
-    initData();
+    // initData removal (not defined)
 
     const pollStatus = async () => {
         try {
