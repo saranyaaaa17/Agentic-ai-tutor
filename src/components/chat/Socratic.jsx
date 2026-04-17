@@ -48,7 +48,7 @@ const CodeBlock = ({ language, children }) => {
 
 const Socratic = () => {
     const { user } = useAuth();
-    const { socraticMode, spokenLanguage } = useSettings();
+    const { socraticMode, setSocraticMode, spokenLanguage } = useSettings();
     const STORAGE_KEY = `helper_bot_v13_${user?.id || 'guest'}`;
     
     const [isOpen, setIsOpen] = useState(false);
@@ -221,7 +221,8 @@ const Socratic = () => {
             const userMsg = currentMessages[currentMessages.length - 1].content;
             const isTechnicalRequest = /flowchart|diagram|system design|architecture|linked list|tree|graph/i.test(userMsg);
             
-            const response = await fetch("/api/chat", {
+            const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:8000" : "");
+            const response = await fetch(`${API_BASE_URL}/api/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -235,6 +236,8 @@ const Socratic = () => {
             });
 
             const data = await response.json();
+            if (!data || (!data.response && !data.error)) throw new Error("Invalid response from AI service");
+
             
             // Show real thinking steps briefly before typing
             setThinkingSteps(data.thinking_steps || []);
@@ -280,7 +283,19 @@ const Socratic = () => {
                 : s
             ));
             
-        } catch (error) { console.error(error); } finally { setIsLoading(false); setThinkingSteps([]); }
+                } catch (error) { 
+            console.error("[Socratic] ❌ Chat failure:", error);
+            const fallbackMsg = { 
+                role: "assistant", 
+                content: "### 🔴 System Connectivity Issue\n\nI'm having trouble connecting to my core brain at `localhost:8000`. \n\n**Possible fixes:**\n1. Ensure `run_all.bat` is running in a terminal.\n2. Check your internet connection (needed for AI responses).\n3. If strictly local, please wait while I refresh my knowledge core.", 
+                id: Date.now() + 2
+            };
+            setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages: [...currentMessages, fallbackMsg] } : s));
+        } finally { 
+            setIsLoading(false); 
+            setThinkingSteps([]); 
+        }
+
     };
 
     useEffect(() => {
@@ -289,7 +304,11 @@ const Socratic = () => {
             timer = setInterval(() => setInterviewTimeLeft(prev => prev - 1), 1000);
         } else if (isInterviewMode && interviewTimeLeft <= 0) {
             setIsInterviewMode(false);
-            handleSendMessage(null, "Time's up! The interview timer has ended. Please provide a detailed evaluation of my performance.");
+            handleSendMessage(null, "Time's up! The interview timer has ended. Please provide a detailed evaluation of my performance.")
+                .catch(err => {
+                    console.error('[Interview] AI evaluation failed:', err);
+                    alert('Failed to get interview evaluation. The AI service may be unavailable. Please try again later.');
+                });
         }
         return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -490,9 +509,17 @@ const Socratic = () => {
                                                     <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${autoResetOnClose ? 'left-6' : 'left-1'}`} />
                                                 </button>
                                             </div>
-                                            <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                                                <div className="text-xs text-slate-400">Session Mode</div>
-                                                <div className="mt-2 text-sm font-bold text-white">{isInterviewMode ? "Mock Interview" : "Study Companion"}</div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs text-slate-400 font-bold">Socratic Mode</span>
+                                                    <span className="text-[10px] text-slate-500 italic">Probe with questions</span>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setSocraticMode(!socraticMode)}
+                                                    className={`w-10 h-5 rounded-full transition-colors relative ${socraticMode ? 'bg-emerald-500' : 'bg-slate-700'}`}
+                                                >
+                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${socraticMode ? 'left-6' : 'left-1'}`} />
+                                                </button>
                                             </div>
                                             <button onClick={() => setSessions([{ id: Date.now().toString(), title: "History Cleared", messages: [] }])} className="text-xs text-rose-500 hover:text-rose-400 transition-colors text-left">Wipe History Logs</button>
                                         </div>

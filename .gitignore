@@ -24,3 +24,28 @@ dist-ssr
 *.sw?
 
 .env
+
+# Python
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+
+# Local Output/Temp
+out.txt
+out.json
+check.txt
+backend_logs.txt
+tmp/

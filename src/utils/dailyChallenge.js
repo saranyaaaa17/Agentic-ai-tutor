@@ -1,8 +1,10 @@
-import { dailyChallenge } from "../data/dailyChallenge";
+
+import { challengesPool } from "../data/dailyChallenge";
 import { recordLearningActivity } from "./learningActivity";
 
-const STORAGE_KEY = "daily_challenge_state";
+const getStorageKey = (userId) => `daily_challenge_state_${userId || 'guest'}`;
 
+// Generates a stable key for today (YYYY-MM-DD)
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 const previousDayKey = (dateString) => {
@@ -11,23 +13,32 @@ const previousDayKey = (dateString) => {
   return date.toISOString().slice(0, 10);
 };
 
-const loadChallengeState = () => {
+// Selects a challenge based on the current date string (stable rotation)
+const getTodayChallenge = () => {
+    const key = todayKey();
+    // Sum of chars in date as a seed
+    const seed = key.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return challengesPool[seed % challengesPool.length];
+};
+
+const loadChallengeState = (userId) => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey(userId));
     return raw ? JSON.parse(raw) : { streak: 0, lastSolvedOn: null, solvedChallenges: {} };
   } catch (_) {
     return { streak: 0, lastSolvedOn: null, solvedChallenges: {} };
   }
 };
 
-const saveChallengeState = (state) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+const saveChallengeState = (userId, state) => {
+  localStorage.setItem(getStorageKey(userId), JSON.stringify(state));
 };
 
-export const getDailyChallengeState = () => {
-  const state = loadChallengeState();
+export const getDailyChallengeState = (userId) => {
+  const state = loadChallengeState(userId);
   const today = todayKey();
-  const challengeStatus = state.solvedChallenges?.[dailyChallenge.id] || {};
+  const challenge = getTodayChallenge();
+  const challengeStatus = state.solvedChallenges?.[challenge.id] || {};
 
   return {
     streak: state.streak || 0,
@@ -36,10 +47,12 @@ export const getDailyChallengeState = () => {
   };
 };
 
-export const recordDailyChallengeSuccess = () => {
-  const state = loadChallengeState();
+export const recordDailyChallengeSuccess = (userId) => {
+  const state = loadChallengeState(userId);
   const today = todayKey();
-  const alreadySolvedToday = state.solvedChallenges?.[dailyChallenge.id]?.solvedOn === today;
+  const challenge = getTodayChallenge();
+  const challengeId = challenge.id;
+  const alreadySolvedToday = state.solvedChallenges?.[challengeId]?.solvedOn === today;
 
   if (alreadySolvedToday) {
     return {
@@ -49,6 +62,7 @@ export const recordDailyChallengeSuccess = () => {
     };
   }
 
+  // Check if streak is maintained or reset
   const nextStreak =
     state.lastSolvedOn === previousDayKey(today) ? (state.streak || 0) + 1 : 1;
 
@@ -57,18 +71,18 @@ export const recordDailyChallengeSuccess = () => {
     lastSolvedOn: today,
     solvedChallenges: {
       ...(state.solvedChallenges || {}),
-      [dailyChallenge.id]: {
+      [challengeId]: {
         solvedOn: today
       }
     }
   };
 
-  saveChallengeState(nextState);
+  saveChallengeState(userId, nextState);
 
-  recordLearningActivity({
+  recordLearningActivity(userId, {
     type: "challenge_completed",
-    title: `Solved ${dailyChallenge.title}`,
-    points: dailyChallenge.points,
+    title: `Solved ${challenge.title}`,
+    points: challenge.points,
   });
 
   return {
@@ -78,13 +92,30 @@ export const recordDailyChallengeSuccess = () => {
   };
 };
 
-export const getDailyChallengeCard = () => {
-  const state = getDailyChallengeState();
+// Calculates "HHh MMm" remaining until midnight
+const calculateTimeLeft = () => {
+    const now = new Date();
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    
+    const diff = midnight - now;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m`;
+};
+
+export const getDailyChallengeCard = (userId) => {
+  const state = getDailyChallengeState(userId);
+  const challenge = getTodayChallenge();
 
   return {
-    ...dailyChallenge,
+    ...challenge,
     streak: state.streak,
     solvedToday: state.solvedToday,
-    timeLeft: "24h 00m"
+    timeLeft: calculateTimeLeft()
   };
 };
+
+// Re-export for direct challenge access if needed
+export { getTodayChallenge as dailyChallenge };

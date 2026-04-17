@@ -70,7 +70,7 @@ const AssistantChat = () => {
 
     return (
         <div className="flex flex-col gap-5 p-5 text-white h-full overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.06),transparent_30%),linear-gradient(180deg,rgba(2,6,23,0.85),rgba(2,6,23,1))]">
-            <div className="rounded-3xl border border-white/8 bg-white/[0.03] p-5">
+            <div className="rounded-3xl border border-white/8 bg-white/3 p-5">
                 <div className="flex items-start justify-between gap-4">
                     <div>
                         <div className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-400">Tutor Studio</div>
@@ -112,7 +112,7 @@ const AssistantChat = () => {
                     className="bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-600"
                 />
             </div>
-            <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+            <div className="rounded-2xl border border-white/8 bg-white/3 p-4">
                 <div className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Session Guidance</div>
                 <div className="mt-3 space-y-2 text-sm leading-6 text-slate-400">
                     <p>Choose `Teach` to get explanation, example, and a practice prompt.</p>

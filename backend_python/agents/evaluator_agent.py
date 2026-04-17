@@ -1,10 +1,14 @@
-
 import os
 import json
 import re
-from groq import Groq
 from dotenv import load_dotenv
 from typing import List, Dict, Any, Optional
+try:
+    from agents.llm_utils import llm_service
+except ImportError:
+    from llm_utils import llm_service
+
+load_dotenv()
 from learner_profile import LearnerProfile
 
 # Load environment variables
@@ -18,12 +22,7 @@ class EvaluatorAgent:
     3. generate_feedback()
     """
     def __init__(self):
-        self.api_key = os.environ.get("GROQ_API_KEY")
-        if not self.api_key:
-            print("[EvaluatorAgent] ❌ CRITICAL: GROQ_API_KEY is missing!")
-        
-        self.client = Groq(api_key=self.api_key)
-        self.model = "llama-3.3-70b-versatile"
+        pass
 
     def _simple_evaluation(self, user_answer: str, correct_answer: str) -> Optional[bool]:
         """
@@ -49,7 +48,7 @@ class EvaluatorAgent:
             
         return None
 
-    def evaluate_correctness(self, question: str, user_answer: str, correct_answer: str, topic: str, concepts: List[str]) -> Dict[str, Any]:
+    async def evaluate_correctness(self, question: str, user_answer: str, correct_answer: str, topic: str, concepts: List[str]) -> Dict[str, Any]:
         """
         Determines correctness using Hybrid approach (Simple -> AI).
         Returns valid JSON evaluation object.
@@ -62,7 +61,7 @@ class EvaluatorAgent:
                  "correct": simple_check,
                  "confidence": 1.0,
                  "reasoning": "Exact match with expected answer.",
-                 "weak_concepts": [], # No weak concepts inferred from exact match yet
+                 "weak_concepts": [], 
                  "error_type": "none"
              }
 
@@ -80,7 +79,7 @@ class EvaluatorAgent:
             "confidence": 0.0-1.0 (float),
             "reasoning": "Brief objective explanation.",
             "error_type": "logic_error" | "syntax_error" | "misconception" | "guessing" | "none",
-            "weak_concepts": ["concept1", "concept2"] (Extract specific failing concepts from provided list)
+            "weak_concepts": ["concept1", "concept2"] (Extract specific failing concepts)
         }
         """
         
@@ -92,28 +91,31 @@ class EvaluatorAgent:
         """
 
         try:
-            completion = self.client.chat.completions.create(
+            raw = await llm_service.call_llm(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                model=self.model,
                 temperature=0.0,
-                response_format={"type": "json_object"}
+                json_mode=True,
+                agent_name="EvaluatorAgent"
             )
             
-            raw = completion.choices[0].message.content
-            data = json.loads(raw)
+            if not raw:
+                raise Exception("No response from AI")
+                
+            data = llm_service.parse_json(raw)
+            if not data:
+                raise Exception("JSON parse failed")
+                
             return data
             
         except Exception as e:
             print(f"[EvaluatorAgent] ❌ AI Evaluation Failed: {e}")
-            # Fallback - if we can't evaluate, assume incorrect for safety but flag it?
-            # Or return a neutral error state.
             return {
                 "correct": False,
                 "confidence": 0.0,
-                "reasoning": "Evaluation service unavailable.",
+                "reasoning": f"Evaluation service unavailable: {str(e)}",
                 "error_type": "system_error",
                 "weak_concepts": []
             }
@@ -207,7 +209,7 @@ async def evaluator_agent(question: str, user_answer: str, topic: str, correct_a
     """
     
     # 1. Evaluate Correctness
-    eval_result = evaluator.evaluate_correctness(question, user_answer, correct_answer, topic, concepts)
+    eval_result = await evaluator.evaluate_correctness(question, user_answer, correct_answer, topic, concepts)
     
     # 2. Generate Feedback (Optionally use AI for richer feedback if needed, simplified here)
     feedback = evaluator.generate_feedback(eval_result, user_answer, correct_answer) # Or use AI reasoning

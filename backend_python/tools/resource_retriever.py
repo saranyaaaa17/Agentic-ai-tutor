@@ -4,7 +4,7 @@ class ResourceRetriever:
             {
                 "title": "Striver's A to Z DSA Course",
                 "platform": "YouTube",
-                "url": "https://www.youtube.com/@takeUforward/videos",
+                "url": "https://www.youtube.com/playlist?list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_9Z7",
                 "description": "Comprehensive roadmap from basics to advanced interview-level data structures and algorithms.",
                 "covered_concepts": ["Arrays", "Linked List", "Trees", "Graphs", "Recursion"],
                 "tags": ["dsa", "arrays", "linked list", "trees", "graphs", "recursion", "algorithms"],
@@ -20,7 +20,7 @@ class ResourceRetriever:
             {
                 "title": "Abdul Bari Algorithms Playlist",
                 "platform": "YouTube",
-                "url": "https://www.youtube.com/@abdul_bari/videos",
+                "url": "https://www.youtube.com/playlist?list=PLDN4rrl48XKpZghAJkzBW6UqwOTf7u3lH",
                 "description": "Strong conceptual explanations for algorithms, complexity, and recursive thinking.",
                 "covered_concepts": ["Big O", "Sorting", "Searching", "Divide & Conquer"],
                 "tags": ["algorithms", "complexity", "big o", "sorting", "searching", "recursion"],
@@ -28,7 +28,7 @@ class ResourceRetriever:
             {
                 "title": "Striver Dynamic Programming Series",
                 "platform": "YouTube",
-                "url": "https://www.youtube.com/@takeUforward/videos",
+                "url": "https://www.youtube.com/playlist?list=PLgUwDviBIf0qUlt5H_kiKYaNSqJ81PMMY",
                 "description": "Step-by-step dynamic programming path from memoization to advanced patterns.",
                 "covered_concepts": ["Dynamic Programming", "Memoization", "Tabulation"],
                 "tags": ["dynamic programming", "dp", "memoization", "tabulation", "recursion"],

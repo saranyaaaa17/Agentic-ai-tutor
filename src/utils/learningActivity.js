@@ -1,8 +1,8 @@
-const STORAGE_KEY = "learning_activity_log_v1";
+const getStorageKey = (userId) => `learning_activity_log_v1_${userId || 'guest'}`;
 
-const loadActivityLog = () => {
+const loadActivityLog = (userId) => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey(userId));
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch (_) {
@@ -10,8 +10,8 @@ const loadActivityLog = () => {
   }
 };
 
-const saveActivityLog = (activities) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(activities.slice(0, 100)));
+const saveActivityLog = (userId, activities) => {
+  localStorage.setItem(getStorageKey(userId), JSON.stringify(activities.slice(0, 100)));
 };
 
 const startOfDay = (date) => {
@@ -32,7 +32,7 @@ const getRelativeTimeLabel = (timestamp) => {
   return `${days} days ago`;
 };
 
-export const recordLearningActivity = (activity) => {
+export const recordLearningActivity = (userId, activity) => {
   const nextActivity = {
     id: `${activity.type}_${Date.now()}`,
     timestamp: new Date().toISOString(),
@@ -40,13 +40,13 @@ export const recordLearningActivity = (activity) => {
     ...activity,
   };
 
-  const activities = [nextActivity, ...loadActivityLog()];
-  saveActivityLog(activities);
+  const activities = [nextActivity, ...loadActivityLog(userId)];
+  saveActivityLog(userId, activities);
   return nextActivity;
 };
 
-export const getLearningVelocityData = () => {
-  const activities = loadActivityLog();
+export const getLearningVelocityData = (userId) => {
+  const activities = loadActivityLog(userId);
   const today = startOfDay(new Date());
   const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -78,7 +78,7 @@ export const getLearningVelocityData = () => {
   }));
 };
 
-export const getRecentMilestones = (limit = 3) => {
+export const getRecentMilestones = (userId, limit = 3) => {
   const iconByType = {
     challenge_completed: "🔥",
     concept_assessment_completed: "📘",
@@ -91,7 +91,7 @@ export const getRecentMilestones = (limit = 3) => {
     problem_assessment_completed: "text-blue-400",
   };
 
-  return loadActivityLog()
+  return loadActivityLog(userId)
     .slice(0, limit)
     .map((activity) => ({
       title: activity.title,
@@ -100,3 +100,4 @@ export const getRecentMilestones = (limit = 3) => {
       color: colorByType[activity.type] || "text-purple-400",
     }));
 };
+

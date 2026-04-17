@@ -264,7 +264,13 @@ class TutorOrchestrator:
         )
         
         return {
-            "analysis": analysis,
+            "evaluation": {
+                "total_questions": len(questions),
+                "total_answers": len(answers),
+                "topic": topic
+            },
+            "knowledge_gap": analysis,
+            "analysis": analysis, # Backwards compatibility
             "strategy": strategy
         }
 

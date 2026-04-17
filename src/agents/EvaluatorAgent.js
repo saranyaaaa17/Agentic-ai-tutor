@@ -11,12 +11,19 @@
  */
 export const evaluateAnswer = async (question, correctAnswer, studentAnswer, topic = "General", studentLevel = "Intermediate") => {
   try {
-    const response = await fetch("/api/process-answer", {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== "undefined" && window.location.hostname === "localhost" ? "http://localhost:8000" : "");
+    const response = await fetch(`${API_BASE_URL}/api/evaluate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ question, correctAnswer, studentAnswer, topic, studentLevel }),
+      body: JSON.stringify({
+        question: question,
+        correct_answer: correctAnswer,
+        user_answer: studentAnswer,
+        topic: topic,
+        student_profile: { level: studentLevel }
+      }),
     });
 
     if (!response.ok) {

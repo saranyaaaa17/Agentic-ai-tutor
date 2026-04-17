@@ -13,6 +13,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
+  const [formattedPhone, setFormattedPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,12 +53,13 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-        let formattedPhone = phone.trim();
-    if (/^\d{10}$/.test(formattedPhone)) formattedPhone = "+91" + formattedPhone;
-    else if (/^\d{12}$/.test(formattedPhone) && formattedPhone.startsWith("91")) formattedPhone = "+" + formattedPhone;
+    let formatted = phone.trim();
+    if (/^\d{10}$/.test(formatted)) formatted = "+91" + formatted;
+    else if (/^\d{12}$/.test(formatted) && formatted.startsWith("91")) formatted = "+" + formatted;
+    setFormattedPhone(formatted);
     
     const { error } = await supabase.auth.signInWithOtp({
-      phone: formattedPhone,
+      phone: formatted,
     });
     if (error) {
       setError(error.message);
@@ -72,7 +74,7 @@ const Login = () => {
     setLoading(true);
     setError(null);
     const { error } = await supabase.auth.verifyOtp({
-      /*_PHONE_*/
+      phone: formattedPhone,
       token: otp,
       type: 'sms',
     });
@@ -82,7 +84,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050B14] text-white flex relative overflow-hidden font-sans selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-bg-primary text-text-primary flex relative overflow-hidden font-sans selection:bg-cyan-500/30">
       
       {/* Absolute Back Button */}
       <div className="absolute top-8 left-8 z-50">
@@ -91,7 +93,7 @@ const Login = () => {
 
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex w-1/2 relative items-center justify-center p-12 bg-slate-900 border-r border-white/5">
-        <div className="absolute inset-0 bg-[#0F172A]">
+        <div className="absolute inset-0 bg-bg-primary">
            <div className="absolute top-0 left-0 w-full h-[500px] bg-cyan-500/20 blur-[120px] rounded-full pointer-events-none opacity-50 mix-blend-screen" />
            <div className="absolute bottom-0 right-0 w-full h-[500px] bg-blue-600/20 blur-[120px] rounded-full pointer-events-none opacity-50 mix-blend-screen" />
            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20 mask-[linear-gradient(180deg,white,rgba(255,255,255,0))]" />
@@ -112,16 +114,16 @@ const Login = () => {
                   Welcome Back, <br/>
                   <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-400 to-blue-500">Learner.</span>
                 </h1>
-                <p className="text-slate-400 text-lg leading-relaxed mb-8">
+                <p className="text-text-secondary text-lg leading-relaxed mb-8">
                   Your personalized AI Tutor is ready to help you continue. Log in to access your learning dashboard.
                 </p>
                 
                 <div className="flex gap-4">
-                   <div className="bg-slate-800/50 backdrop-blur-md p-4 rounded-xl border border-white/10 flex items-center gap-3">
+                   <div className="bg-bg-surface/50 backdrop-blur-md p-4 rounded-xl border border-border-primary flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                       <span className="text-sm font-medium text-slate-300">System Online</span>
                    </div>
-                   <div className="bg-slate-800/50 backdrop-blur-md p-4 rounded-xl border border-white/10 flex items-center gap-3">
+                   <div className="bg-bg-surface/50 backdrop-blur-md p-4 rounded-xl border border-border-primary flex items-center gap-3">
                       <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
@@ -138,7 +140,7 @@ const Login = () => {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-slate-900/50 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden"
+                className="bg-bg-secondary/50 backdrop-blur-xl border border-border-primary p-8 rounded-3xl shadow-2xl relative overflow-hidden"
               >
                  {/* Google Login */}
                  <button
@@ -162,7 +164,7 @@ const Login = () => {
                  </div>
 
                  {/* Tabs */}
-                 <div className="flex bg-slate-950/50 p-1 rounded-xl mb-6 border border-white/5">
+                 <div className="flex bg-bg-surface/50 p-1 rounded-xl mb-6 border border-white/5">
                     <button 
                        onClick={() => setAuthMethod('email')}
                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${authMethod === 'email' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
@@ -178,7 +180,7 @@ const Login = () => {
                  </div>
 
                  {error && (
-                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm font-medium flex items-center gap-2">
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 bg-error/10 border-error/30 text-error/30 rounded-lg text-sm font-medium flex items-center gap-2">
                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                        {error}
                     </motion.div>
@@ -187,7 +189,7 @@ const Login = () => {
                  {authMethod === 'email' ? (
                     <form onSubmit={handleEmailLogin} className="space-y-4">
                         <div>
-                          <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Email Address</label>
+                          <label className="block text-xs font-bold text-text-secondary mb-1 uppercase tracking-wider">Email Address</label>
                           <input
                             type="email"
                             required
@@ -198,7 +200,7 @@ const Login = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Password</label>
+                          <label className="block text-xs font-bold text-text-secondary mb-1 uppercase tracking-wider">Password</label>
                           <div className="relative">
                             <input
                               type={showPassword ? "text" : "password"}
@@ -238,7 +240,7 @@ const Login = () => {
                     <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
                         {!otpSent ? (
                             <div>
-                                <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Mobile Number</label>
+                                <label className="block text-xs font-bold text-text-secondary mb-1 uppercase tracking-wider">Mobile Number</label>
                                 <input
                                   type="tel"
                                   required
@@ -251,7 +253,7 @@ const Login = () => {
                             </div>
                         ) : (
                             <div>
-                                <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Enter OTP</label>
+                                <label className="block text-xs font-bold text-text-secondary mb-1 uppercase tracking-wider">Enter OTP</label>
                                 <input
                                   type="text"
                                   required
@@ -283,7 +285,7 @@ const Login = () => {
                     </form>
                  )}
 
-                 <div className="mt-8 text-center text-sm text-slate-400">
+                 <div className="mt-8 text-center text-sm text-text-secondary">
                    Don't have an account?{" "}
                    <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline">
                      Create Account

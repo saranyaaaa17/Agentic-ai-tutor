@@ -6,6 +6,11 @@ import random
 from groq import AsyncGroq
 from dotenv import load_dotenv
 from typing import Dict, Any, List
+try:
+    from agents.llm_utils import llm_service
+except ImportError:
+    from llm_utils import llm_service
+
 
 # Load env variables
 load_dotenv()
@@ -18,61 +23,17 @@ class AutonomousTeacher:
             print("[ERROR] CRITICAL: GROQ_API_KEY is missing!")
         
         self.client = AsyncGroq(api_key=key)
-        self.model = "llama-3.3-70b-versatile"
+        # Use faster model as primary since rate limit is hit on 70b
+        self.model = "llama-3.1-8b-instant"
         print(f"[TeacherAgent] Initialized with model: {self.model}")
 
     async def _call_llm(self, messages: List[Dict[str, str]], temperature: float = 0.7) -> str:
-        """Core LLM Call Wrapper with retries and fallback models"""
-        models = ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "llama3-70b-8192"]
-        
-        for model in models:
-            for attempt in range(1, 3): # 2 attempts per model
-                try:
-                    print(f"[TeacherAgent] [CALL] Calling Groq with {model} (Attempt {attempt})...")
-                    completion = await self.client.chat.completions.create(
-                        model=model,
-                        messages=messages,
-                        temperature=temperature,
-                        response_format={"type": "json_object"}
-                    )
-                    content = completion.choices[0].message.content
-                    print(f"[TeacherAgent] [SUCCESS] Received {len(content)} chars from {model}")
-                    return content
-                except Exception as e:
-                    print(f"[TeacherAgent] [ERROR] {model} Attempt {attempt} Failed: {str(e)}")
-                    if "rate_limit" in str(e).lower():
-                        import asyncio
-                        await asyncio.sleep(1) # Short sleep for rate limits
-                    continue # Try next attempt or model
-        
-        # If all fail
-        print(f"[TeacherAgent] [FATAL] All LLM models failed.")
-        with open("backend_logs.txt", "a", encoding="utf-8") as f:
-            import time
-            f.write(f"[FATAL] {time.ctime()} - All LLM models failed to respond.\n")
-        return None
+        """Core LLM Call Wrapper using llm_service"""
+        return await llm_service.call_llm(messages, temperature, json_mode=True, agent_name="TeacherAgent")
 
     def _parse_json(self, content: str) -> Dict:
         """Robust JSON Parser"""
-        if not content: return None
-        try:
-            # 1. Strip Markdown
-            cleaned = re.sub(r"```json\s*", "", content)
-            cleaned = re.sub(r"```\s*$", "", cleaned).strip()
-            
-            # 2. Extract JSON object
-            start = cleaned.find('{')
-            end = cleaned.rfind('}') + 1
-            if start != -1 and end != -1:
-                cleaned = cleaned[start:end]
-            
-            return json.loads(cleaned)
-        except json.JSONDecodeError as e:
-            print(f"[TeacherAgent] [WARN] JSON Parse Failed: {str(e)}. Raw content start: {content[:200]}...")
-            with open("backend_logs.txt", "a", encoding="utf-8") as f:
-                import time
-                f.write(f"[ERROR] {time.ctime()} - JSON Parse Failed. Fragment: {content[:100]}\n")
-            return None
+        return llm_service.parse_json(content)
 
     async def run(self, topic: str, difficulty: str, mode: str = 'teach', history: List = None, weak_concepts: List[str] = None, student_profile: Dict = None, num_questions: int = 3) -> Dict:
         history = history or []
@@ -165,20 +126,21 @@ class AutonomousTeacher:
         {focus_prompt}
         {anti_context_prompt}
         
-        STRICT RULES:
-        1. NO generic questions. Use concise code snippets or technical scenarios.
-        2. Format: Return a JSON object with "thinking_steps" (list) and "questions" (list).
-        3. Each question must have: "id", "q", "options", "ans", "explanation", "hint", "difficulty", "time_limit".
-        4. "time_limit" should be in seconds: Easy: 45, Medium: 90, Hard: 180.
-        5. "explanation" should describe the choice of "ans" clearly.
-        6. "ans" must be exactly the same string as one of the items in "options".
-        7. LOGIC VERIFICATION: Before outputting, simulate the code snippet or logic. Ensure the "ans" is factually correct.
-        8. "hint" must be a subtle clue that doesn't give away the answer but clarifies the trick if any (e.g., "Remember 0-based indexing").
-        9. Keep JSON overhead minimal to prevent truncation.
+        STRICT RULES (PEDAGOGY):
+        1. NO generic questions. Use concise code snippets (5-10 lines max) or technical scenarios.
+        2. Format: Return a JSON object with "thinking_steps" (list of max 2 high-level points) and "questions" (list).
+        3. Each question must have: "id", "q", "options", "ans", "explanation", "hint", "difficulty", "time_limit", "concept".
+        4. "concept" should be a specific sub-topic (e.g., "Memory Allocation", "Time Complexity", "Pointer Arithmetic").
+        5. "time_limit" should be in seconds: Easy: 30, Medium: 60, Hard: 120.
+        6. "explanation" should be CONCISE (max 2 sentences).
+        7. "ans" must be exactly the same string as one of the items in "options".
+        8. LOGIC VERIFICATION: Before outputting, simulate the code snippet or logic. Ensure the "ans" is factually correct.
+        9. "hint" must be a subtle clue that doesn't give away the answer but clarifies the trick if any (e.g., "Remember 0-based indexing").
+        10. Keep JSON overhead minimal to prevent truncation.
 
         Example:
         {{
-          "thinking_steps": ["Constructing question 1", "..."],
+          "thinking_steps": ["Ensuring breadth across sub-concepts", "Verifying logic correctness"],
           "questions": [
             {{ 
                "id": 1, 
@@ -188,7 +150,8 @@ class AutonomousTeacher:
                "explanation": "Brief explanation.",
                "hint": "Subtle clue.",
                "difficulty": "medium",
-               "time_limit": 90
+               "time_limit": 60,
+               "concept": "Array Indexing"
             }}
           ]
         }}
@@ -272,7 +235,7 @@ class AutonomousTeacher:
             """
             
             messages = [{"role": "system", "content": reflection_prompt}]
-            raw_res = await self._call_llm(messages, temperature=0.3)
+            raw_res = await llm_service.call_llm(messages, temperature=0.3, json_mode=True, agent_name="TeacherAgent:Reflect")
             reflection_data = self._parse_json(raw_res)
 
             if reflection_data and reflection_data.get('clarity_score', 0) < 0.8:
@@ -289,13 +252,31 @@ class AutonomousTeacher:
             return teacher_response # specific failure shouldn't crash the response
 
     def _get_fallback(self, topic: str, mode: str) -> Dict:
-        return {
-            "questions": [
-                {"id": 1, "q": f"I'm currently recalibrating my knowledge core for {topic}. Please try again in 30 seconds.", "options": ["Retry", "Report", "Wait", "Check Logs"], "ans": "Retry"}
-            ]
-        } if mode == 'assessment' else {
-            "explanation": "My cognitive circuits are a bit overloaded. One moment.", "example": "Check backend health.", "practice_question": "..."
-        }
+        from agents.fallback_data import FALLBACK_QUESTIONS
+        
+        # Try to find a relevant fallback set
+        topic_lower = topic.lower()
+        fallback_set = []
+        if any(x in topic_lower for x in ['dsa', 'array', 'link', 'tree', 'graph', 'stack', 'queue']):
+            fallback_set = FALLBACK_QUESTIONS.get("dsa", [])
+        elif any(x in topic_lower for x in ['python', 'code', 'logic']):
+            fallback_set = FALLBACK_QUESTIONS.get("python", [])
+        else:
+            # Random pick one if none match specifically
+            fallback_set = list(FALLBACK_QUESTIONS.values())[0]
+
+        if mode == 'assessment':
+            return {
+                "questions": fallback_set if fallback_set else [
+                    {"id": 1, "q": f"I'm currently recalibrating my knowledge core for {topic}. Please try again in 30 seconds.", "options": ["Retry", "Report", "Wait", "Check Logs"], "ans": "Retry"}
+                ]
+            }
+        else:
+            return {
+                "explanation": "My cognitive circuits are a bit overloaded. One moment.", 
+                "example": "Check backend health or try a more specific topic.", 
+                "practice_question": "..."
+            }
 
 # Instantiate Singleton
 agent = AutonomousTeacher()

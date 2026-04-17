@@ -3,7 +3,7 @@ const resourceCatalog = [
     id: "striver_dsa",
     title: "Striver's A to Z DSA Course",
     platform: "YouTube",
-    url: "https://www.youtube.com/@takeUforward/videos",
+    url: "https://www.youtube.com/watch?v=EAR7De6Gug4",
     description: "A structured DSA journey from basics to interview-level problem solving with strong topic sequencing.",
     covered_concepts: ["Arrays", "Linked List", "Trees", "Graphs", "Recursion"],
     tags: ["dsa", "arrays", "linked list", "trees", "graphs", "recursion", "algorithms"]
@@ -21,7 +21,7 @@ const resourceCatalog = [
     id: "abdul_bari_algo",
     title: "Abdul Bari Algorithms Playlist",
     platform: "YouTube",
-    url: "https://www.youtube.com/@abdul_bari/videos",
+    url: "https://www.youtube.com/watch?v=0IAPZzGSbME",
     description: "Deep theory and intuition for core algorithms, complexity, recursion, and graph thinking.",
     covered_concepts: ["Big O", "Sorting", "Searching", "Divide & Conquer"],
     tags: ["algorithms", "complexity", "big o", "sorting", "searching", "recursion"]
@@ -30,7 +30,7 @@ const resourceCatalog = [
     id: "striver_dp",
     title: "Striver Dynamic Programming Series",
     platform: "YouTube",
-    url: "https://www.youtube.com/@takeUforward/videos",
+    url: "https://www.youtube.com/watch?v=tyB0ztf0DNY",
     description: "A progressive DP series that builds from recursion and memoization into full DP patterns.",
     covered_concepts: ["Dynamic Programming", "Memoization", "Tabulation"],
     tags: ["dynamic programming", "dp", "memoization", "tabulation", "recursion"]
@@ -84,7 +84,7 @@ const resourceCatalog = [
     id: "statquest_ml",
     title: "StatQuest Machine Learning Playlist",
     platform: "YouTube",
-    url: "https://www.youtube.com/@statquest/videos",
+    url: "https://www.youtube.com/watch?v=Gv9_4yMHFhI",
     description: "Excellent visual explanations for ML concepts, probability, trees, and evaluation metrics.",
     covered_concepts: ["Decision Trees", "Probability", "Linear Regression"],
     tags: ["machine learning", "ml", "decision trees", "probability", "statistics"]
@@ -111,7 +111,7 @@ const resourceCatalog = [
     id: "neso_os",
     title: "Neso Academy Operating Systems",
     platform: "YouTube",
-    url: "https://www.youtube.com/@nesoacademy/videos",
+    url: "https://www.youtube.com/watch?v=2i2llfPHe6M",
     description: "Clear operating systems explanations covering processes, deadlocks, memory, and scheduling.",
     covered_concepts: ["Operating Systems", "Processes", "Deadlocks", "Memory Management"],
     tags: ["os", "operating systems", "processes", "deadlocks", "memory"]

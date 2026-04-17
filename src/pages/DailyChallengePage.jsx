@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { dailyChallenge } from "../data/dailyChallenge";
 import { executeCode } from "../utils/codeExecution";
-import { getDailyChallengeState, recordDailyChallengeSuccess } from "../utils/dailyChallenge";
+import { getDailyChallengeState, recordDailyChallengeSuccess, dailyChallenge } from "../utils/dailyChallenge";
+import { useAuth } from "../context/AuthContext";
 
 const languageLabels = {
   python: "Python 3",
@@ -12,22 +13,37 @@ const languageLabels = {
 const normalizeOutput = (value = "") => value.replace(/\r\n/g, "\n").trim();
 
 const DailyChallengePage = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const currentChallenge = dailyChallenge(); // Get dynamic challenge for today
+  
   const [language, setLanguage] = useState("python");
-  const [code, setCode] = useState(dailyChallenge.starterCode.python);
-  const [customInput, setCustomInput] = useState(dailyChallenge.sampleTests[0].input);
+  const [code, setCode] = useState(currentChallenge.starterCode.python);
+  const [customInput, setCustomInput] = useState(currentChallenge.examples[0]?.input || "");
   const [consoleOutput, setConsoleOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [runResults, setRunResults] = useState([]);
   const [submitResults, setSubmitResults] = useState([]);
-  const [submissionState, setSubmissionState] = useState(() => getDailyChallengeState());
+  const [submissionState, setSubmissionState] = useState(() => getDailyChallengeState(user?.id));
 
-  const allVisibleTests = useMemo(() => dailyChallenge.sampleTests, []);
+  // Sync state when user logs in/out
+  useEffect(() => {
+    setSubmissionState(getDailyChallengeState(user?.id));
+  }, [user?.id]);
+
+  const allVisibleTests = useMemo(() => {
+      // Use sampleTests if available, otherwise examples
+      return currentChallenge.sampleTests || currentChallenge.examples.map((ex, i) => ({
+          name: `Example ${i + 1}`,
+          input: ex.input,
+          expectedOutput: ex.output
+      }));
+  }, [currentChallenge]);
 
   const handleLanguageChange = (nextLanguage) => {
     setLanguage(nextLanguage);
-    setCode(dailyChallenge.starterCode[nextLanguage]);
+    setCode(currentChallenge.starterCode[nextLanguage]);
     setConsoleOutput("");
     setRunResults([]);
     setSubmitResults([]);
@@ -109,7 +125,7 @@ const DailyChallengePage = () => {
       return;
     }
 
-    const hiddenResults = await evaluateTests(dailyChallenge.hiddenTests);
+    const hiddenResults = await evaluateTests(currentChallenge.hiddenTests || currentChallenge.examples);
     const allPassed = hiddenResults.every((result) => result.passed);
 
     setSubmitResults(hiddenResults);
@@ -120,7 +136,7 @@ const DailyChallengePage = () => {
       return;
     }
 
-    const nextState = recordDailyChallengeSuccess();
+    const nextState = recordDailyChallengeSuccess(user?.id);
     setSubmissionState(nextState);
     setConsoleOutput(
       nextState.incremented
@@ -145,13 +161,13 @@ const DailyChallengePage = () => {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[420px_minmax(0,1fr)] gap-6">
-          <section className="bg-slate-900/70 border border-white/10 rounded-3xl p-6 space-y-6">
+          <section className="bg-slate-900/70 border border-white/10 rounded-3xl p-6 space-y-6 h-fit max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-[11px] font-black uppercase tracking-[0.25em] text-blue-400 mb-3">
                   Today&apos;s Challenge
                 </div>
-                <h1 className="text-3xl font-black text-white leading-tight">{dailyChallenge.title}</h1>
+                <h1 className="text-3xl font-black text-white leading-tight">{currentChallenge.title}</h1>
               </div>
               <div className="text-right">
                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Streak</div>
@@ -161,44 +177,46 @@ const DailyChallengePage = () => {
 
             <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest">
               <span className="px-3 py-1 rounded-full border border-rose-500/40 bg-rose-500/10 text-rose-400">
-                {dailyChallenge.difficulty}
+                {currentChallenge.difficulty}
               </span>
-              <span className="text-slate-500">{dailyChallenge.points} XP</span>
-              <span className="text-slate-600">{dailyChallenge.domain.toUpperCase()}</span>
+              <span className="text-slate-500">{currentChallenge.points} XP</span>
+              <span className="text-slate-600">{currentChallenge.domain.toUpperCase()}</span>
             </div>
 
-            <p className="text-sm leading-7 text-slate-300">{dailyChallenge.description}</p>
+            <p className="text-sm leading-7 text-slate-300">{currentChallenge.description}</p>
 
             <div>
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Input Format</h2>
               <ul className="space-y-2 text-sm text-slate-300">
-                {dailyChallenge.inputFormat.map((line) => (
+                {currentChallenge.inputFormat.map((line) => (
                   <li key={line}>{line}</li>
                 ))}
               </ul>
             </div>
 
             <div>
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Output Format</h2>
-              <p className="text-sm text-slate-300">{dailyChallenge.outputFormat}</p>
+               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Output Format</h2>
+               <p className="text-sm text-slate-300">{currentChallenge.outputFormat}</p>
             </div>
 
-            <div>
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Constraints</h2>
-              <ul className="space-y-2 text-sm text-slate-300">
-                {dailyChallenge.constraints.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            </div>
+            {currentChallenge.constraints && (
+                <div>
+                   <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Constraints</h2>
+                   <ul className="space-y-2 text-sm text-slate-300">
+                     {currentChallenge.constraints.map((line) => (
+                       <li key={line}>{line}</li>
+                     ))}
+                   </ul>
+                </div>
+            )}
 
             <div>
               <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Examples</h2>
               <div className="space-y-4">
-                {dailyChallenge.examples.map((example, index) => (
+                {currentChallenge.examples.map((example, index) => (
                   <div key={index} className="rounded-2xl bg-black/30 border border-white/5 p-4">
                     <div className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">
-                      Example {index + 1}
+                       Example {index + 1}
                     </div>
                     <div className="space-y-2 text-xs font-mono">
                       <div>
@@ -216,8 +234,8 @@ const DailyChallengePage = () => {
             </div>
           </section>
 
-          <section className="bg-slate-900/70 border border-white/10 rounded-3xl overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-white/10 bg-slate-900">
+          <section className="bg-slate-900/70 border border-white/10 rounded-3xl overflow-hidden flex flex-col h-[90vh]">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-white/10 bg-slate-900 shrink-0">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Compiler</span>
                 <select
@@ -258,20 +276,20 @@ const DailyChallengePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_360px] min-h-[760px]">
-              <div className="flex flex-col border-r border-white/10">
+            <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_360px] flex-1 overflow-hidden">
+              <div className="flex flex-col border-r border-white/10 overflow-hidden">
                 <textarea
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
                   spellCheck="false"
-                  className="flex-1 min-h-[420px] bg-[#111827] text-slate-100 font-mono text-sm p-5 resize-none focus:outline-none"
+                  className="flex-1 bg-[#111827] text-slate-100 font-mono text-sm p-5 resize-none focus:outline-none"
                 />
 
-                <div className="border-t border-white/10 bg-black/30 p-5 space-y-3">
+                <div className="border-t border-white/10 bg-black/30 p-5 space-y-3 shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Custom Input</div>
                     <button
-                      onClick={() => setCustomInput(dailyChallenge.sampleTests[0].input)}
+                      onClick={() => setCustomInput(currentChallenge.examples[0]?.input || "")}
                       className="text-[11px] font-bold text-blue-400 hover:text-blue-300"
                     >
                       Reset to sample
@@ -286,27 +304,27 @@ const DailyChallengePage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-rows-[220px_auto_auto]">
-                <div className="border-b border-white/10 bg-black p-4">
+              <div className="flex flex-col overflow-hidden">
+                <div className="h-1/3 border-b border-white/10 bg-black p-4 overflow-hidden flex flex-col">
                   <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Console</div>
-                  <pre className="text-xs font-mono whitespace-pre-wrap text-emerald-300 overflow-auto h-[160px]">
+                  <pre className="flex-1 text-xs font-mono whitespace-pre-wrap text-emerald-300 overflow-auto">
                     {consoleOutput || "Compiler output will appear here."}
                   </pre>
                 </div>
 
-                <div className="border-b border-white/10 p-4 bg-slate-950/70">
+                <div className="h-1/3 border-b border-white/10 p-4 bg-slate-950/70 overflow-hidden flex flex-col">
                   <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Visible Test Cases</div>
-                  <div className="space-y-3">
+                  <div className="flex-1 overflow-auto space-y-3 custom-scrollbar">
                     {allVisibleTests.map((test) => {
                       const result = runResults.find((item) => item.name === test.name);
 
                       return (
                         <div key={test.name} className="rounded-2xl border border-white/5 bg-black/20 p-3">
                           <div className="flex items-center justify-between gap-3 mb-2">
-                            <span className="text-sm font-bold text-white">{test.name}</span>
-                            <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${!result ? "text-slate-500" : result.passed ? "text-emerald-400" : "text-rose-400"}`}>
-                              {!result ? "Pending" : result.passed ? "Passed" : "Failed"}
-                            </span>
+                             <span className="text-sm font-bold text-white">{test.name}</span>
+                             <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${!result ? "text-slate-500" : result.passed ? "text-emerald-400" : "text-rose-400"}`}>
+                               {!result ? "Pending" : result.passed ? "Passed" : "Failed"}
+                             </span>
                           </div>
                           <div className="text-[11px] font-mono text-slate-400 whitespace-pre-wrap">{test.input}</div>
                           {result && !result.passed && (
@@ -320,31 +338,33 @@ const DailyChallengePage = () => {
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-950/40">
+                <div className="h-1/3 p-4 bg-slate-950/40 overflow-hidden flex flex-col">
                   <div className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">Submission Status</div>
-                  <div className="rounded-2xl border border-white/5 bg-black/20 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-white">Hidden Test Cases</span>
-                      <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${submitResults.length === 0 ? "text-slate-500" : submitResults.every((item) => item.passed) ? "text-emerald-400" : "text-rose-400"}`}>
-                        {submitResults.length === 0 ? "Not submitted" : submitResults.every((item) => item.passed) ? "Passed" : "Failed"}
-                      </span>
-                    </div>
-                    {submitResults.length === 0 ? (
-                      <p className="text-sm text-slate-400">
-                        Submit after your code passes all visible tests. Streak increases by 1 on the first successful solve of the day.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {submitResults.map((result) => (
-                          <div key={result.name} className="flex items-center justify-between text-sm">
-                            <span className="text-slate-300">{result.name}</span>
-                            <span className={result.passed ? "text-emerald-400" : "text-rose-400"}>
-                              {result.passed ? "Passed" : "Failed"}
-                            </span>
+                  <div className="flex-1 overflow-auto space-y-3 custom-scrollbar">
+                    <div className="rounded-2xl border border-white/5 bg-black/20 p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-white">Hidden Test Cases</span>
+                          <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${submitResults.length === 0 ? "text-slate-500" : submitResults.every((item) => item.passed) ? "text-emerald-400" : "text-rose-400"}`}>
+                            {submitResults.length === 0 ? "Not submitted" : submitResults.every((item) => item.passed) ? "Passed" : "Failed"}
+                          </span>
+                        </div>
+                        {submitResults.length === 0 ? (
+                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                            Submit after passing all visible tests. Your streak grows by 1 on your first daily solve.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            {submitResults.map((result) => (
+                              <div key={result.name} className="flex items-center justify-between text-xs">
+                                <span className="text-slate-300">{result.name}</span>
+                                <span className={result.passed ? "text-emerald-400" : "text-rose-400"}>
+                                  {result.passed ? "Passed" : "Failed"}
+                                </span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        )}
+                    </div>
                   </div>
                 </div>
               </div>

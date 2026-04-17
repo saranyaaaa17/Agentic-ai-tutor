@@ -260,6 +260,7 @@ async def learning_cycle_endpoint(request: LearningCycleRequest, background_task
 async def gap_analysis_endpoint(request: GapAnalysisRequest):
     try:
         print(f"[API] 📞 /api/gap-analysis called for topic: {request.topic}")
+        print(f"[API] 📊 Analyzing {len(request.questions)} questions with {len(request.answers)} answers")
         
         # Call Orchestrator Logic
         analysis = await orchestrator.run_gap_analysis_session(
@@ -268,16 +269,42 @@ async def gap_analysis_endpoint(request: GapAnalysisRequest):
             topic=request.topic
         )
         
+        # Validate response structure
+        if not analysis:
+            raise ValueError("Orchestrator returned empty analysis")
+        
+        if "analysis" not in analysis:
+            print(f"[API] ⚠️ Warning: Missing 'analysis' key in response")
+            analysis = {"analysis": analysis, "strategy": {}}
+        
+        print(f"[API] ✅ Gap analysis complete. Proficiency: {analysis.get('knowledge_gap', {}).get('proficiency_level', 'unknown')}")
+        print(f"[API] 📊 Weak concepts: {analysis.get('knowledge_gap', {}).get('weak_concepts', [])}")
+        print(f"[API] 🛤️ Strategy generated: {bool(analysis.get('strategy'))}")
+        
         return analysis
 
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
         print(f"[API] ❌ Error in /api/gap-analysis: {tb}")
+        
+        # Return structured error instead of raising to prevent frontend crash
         return {
-            "error_type": type(e).__name__,
-            "message": str(e),
-            "traceback": tb
+            "analysis": {
+                "proficiency_level": "Intermediate",
+                "gap_analysis": f"Analysis service encountered an error: {str(e)}. Your results have been saved.",
+                "weak_concepts": [],
+                "strong_concepts": [],
+                "recommended_focus": "Review your incorrect answers",
+                "mastery_profile": {},
+                "error": True
+            },
+            "strategy": None,
+            "error_details": {
+                "error_type": type(e).__name__,
+                "message": str(e),
+                "traceback": tb
+            }
         }
 
 @app.post("/api/diagnose-mistake")

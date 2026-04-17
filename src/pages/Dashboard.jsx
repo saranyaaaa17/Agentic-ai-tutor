@@ -164,15 +164,15 @@ const Icon = {
 
 /* ?????? State & Constants ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????? */
 const THEMES = {
-  slate: { name: "Slate", class: "bg-slate-950" },
-  glass: { name: "Glass", class: "bg-[#050811]/40" },
+  slate: { name: "Slate", class: "bg-bg-secondary" },
+  glass: { name: "Glass", class: "bg-bg-primary/40" },
   dark: { name: "Dark", class: "bg-black" }
 };
 
 const formatMasteryPercent = (value) => `${Math.round(normalizeMasteryScore(value) * 100)}%`;
 const masteryWidth = (value) => `${normalizeMasteryScore(value) * 100}%`;
 const getVelocityCellClass = (value, maxValue) => {
-  if (value <= 0 || maxValue <= 0) return "bg-slate-800 border-slate-700/60";
+  if (value <= 0 || maxValue <= 0) return "bg-bg-surface border-border-secondary";
 
   const ratio = value / maxValue;
   if (ratio >= 0.85) return "bg-emerald-400 border-emerald-300/70 shadow-[0_0_18px_rgba(52,211,153,0.18)]";
@@ -245,8 +245,8 @@ const Dashboard = () => {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [isTraceMinimized, setIsTraceMinimized] = useState(true);
-  const [learningVelocity, setLearningVelocity] = useState(() => getLearningVelocityData());
-  const [recentMilestones, setRecentMilestones] = useState(() => getRecentMilestones());
+  const [learningVelocity, setLearningVelocity] = useState(() => getLearningVelocityData(user?.id));
+  const [recentMilestones, setRecentMilestones] = useState(() => getRecentMilestones(user?.id));
 
   const [agentStatus, setAgentStatus] = useState({
     coordinator: "connecting...",
@@ -267,20 +267,26 @@ const Dashboard = () => {
   ]);
 
   useEffect(() => {
-    setPotd(getDailyChallengeCard());
-    setLearningVelocity(getLearningVelocityData());
-    setRecentMilestones(getRecentMilestones());
-  }, []);
-
-  useEffect(() => {
     const refreshDashboardSignals = () => {
-      setPotd(getDailyChallengeCard());
-      setLearningVelocity(getLearningVelocityData());
-      setRecentMilestones(getRecentMilestones());
+      setPotd(getDailyChallengeCard(user?.id));
+      if (user?.id) {
+        setLearningVelocity(getLearningVelocityData(user.id));
+        setRecentMilestones(getRecentMilestones(user.id));
+      }
     };
+
+    refreshDashboardSignals();
+
+    const potdInterval = setInterval(() => {
+      setPotd(getDailyChallengeCard(user?.id));
+    }, 60000);
+
     window.addEventListener("focus", refreshDashboardSignals);
-    return () => window.removeEventListener("focus", refreshDashboardSignals);
-  }, []);
+    return () => {
+      window.removeEventListener("focus", refreshDashboardSignals);
+      clearInterval(potdInterval);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -302,7 +308,7 @@ const Dashboard = () => {
   const maxVelocityValue = Math.max(...learningVelocity.map((day) => day.value), 0);
 
   const companies = [
-    { id: 'google', name: 'Google', min: 85, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { id: 'google', name: 'Google', min: 85, color: 'text-accent-primary', bg: 'bg-blue-500/10' },
     { id: 'meta', name: 'Meta', min: 80, color: 'text-rose-400', bg: 'bg-rose-500/10' },
     { id: 'amazon', name: 'Amazon', min: 75, color: 'text-amber-400', bg: 'bg-amber-500/10' },
     { id: 'microsoft', name: 'Microsoft', min: 82, color: 'text-cyan-400', bg: 'bg-cyan-500/10' }
@@ -329,9 +335,23 @@ const Dashboard = () => {
     { label: "DBMS", path: "/assessment?domain=dbms", category: "Learn" },
     { label: "Operating Systems", path: "/assessment?domain=os", category: "Learn" },
     { label: "Python Programming", path: "/assessment?domain=programming&subtopic=python", category: "Learn" },
+    { label: "C Programming", path: "/assessment?domain=programming&subtopic=c", category: "Learn" },
+    { label: "C++ Programming", path: "/assessment?domain=programming&subtopic=cpp", category: "Learn" },
+    { label: "Java Programming", path: "/assessment?domain=programming&subtopic=java", category: "Learn" },
+    { label: "JavaScript Programming", path: "/assessment?domain=programming&subtopic=javascript", category: "Learn" },
     { label: "C++ Challenges", path: "/problem-assessment?domain=programming-problems&subtopic=cpp-problems", category: "Practice" },
     { label: "SQL Challenges", path: "/problem-assessment?domain=sql-problems", category: "Practice" },
     { label: "Logical Reasoning", path: "/problem-assessment?domain=logic-problems", category: "Practice" },
+    { label: "Product-Based Companies", path: "/product-selection", category: "Interview Prep" },
+    { label: "Service-Based Companies", path: "/service-selection", category: "Interview Prep" },
+    { label: "Google Interview Prep", path: "/product-selection", category: "Interview Prep" },
+    { label: "Amazon Interview Prep", path: "/product-selection", category: "Interview Prep" },
+    { label: "Microsoft Interview Prep", path: "/product-selection", category: "Interview Prep" },
+    { label: "Meta Interview Prep", path: "/product-selection", category: "Interview Prep" },
+    { label: "TCS Interview Prep", path: "/service-selection", category: "Interview Prep" },
+    { label: "Infosys Interview Prep", path: "/service-selection", category: "Interview Prep" },
+    { label: "Wipro Interview Prep", path: "/service-selection", category: "Interview Prep" },
+    { label: "Accenture Interview Prep", path: "/service-selection", category: "Interview Prep" },
     { label: "Interview Prep", path: "/dashboard?mode=exam", category: "Exams" },
   ];
 
@@ -518,7 +538,7 @@ const Dashboard = () => {
   ];
 
   const colorMap = {
-    blue:  { accent: "text-blue-400",   bg: "bg-blue-500/15",   border: "border-blue-500/25",   hover: "hover:border-blue-500/50",   icon: "text-blue-400",   bar: "bg-blue-500"   },
+    blue:  { accent: "text-accent-primary",   bg: "bg-blue-500/15",   border: "border-blue-500/25",   hover: "hover:border-blue-500/50",   icon: "text-accent-primary",   bar: "bg-blue-500"   },
     cyan:  { accent: "text-cyan-400",   bg: "bg-cyan-500/15",   border: "border-cyan-500/25",   hover: "hover:border-cyan-500/50",   icon: "text-cyan-400",   bar: "bg-cyan-500"   },
     rose:  { accent: "text-rose-400",   bg: "bg-rose-500/15",   border: "border-rose-500/25",   hover: "hover:border-rose-500/50",   icon: "text-rose-400",   bar: "bg-rose-500"   },
     amber: { accent: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/25", hover: "hover:border-amber-500/50", icon: "text-amber-400", bar: "bg-amber-500" },
@@ -544,7 +564,7 @@ const Dashboard = () => {
 
       {/* Sidebar */}
       <aside className={`w-64 h-screen flex flex-col z-50 shrink-0 transition-all duration-500
-        ${appearance === 'glass' ? 'bg-slate-950/40 backdrop-blur-3xl border-r border-white/5' : 'bg-slate-950 border-r border-slate-900'}`}>
+        ${appearance === 'glass' ? 'bg-bg-primary/40 backdrop-blur-3xl border-r border-border-secondary' : 'bg-bg-secondary border-r border-border-primary'}`}>
          
          <div className="p-8 pb-10">
             <div className="flex items-center gap-3 group px-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
@@ -556,15 +576,15 @@ const Dashboard = () => {
          </div>
 
          <nav className="flex-1 px-4 space-y-1">
-            <div className="px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4">Core Pathways</div>
+            <div className="px-4 text-[10px] font-bold text-text-muted uppercase tracking-widest mb-4">Core Pathways</div>
             {navItems.map((item) => (
                <button
                   key={item.id}
                   onClick={() => handleTabChange(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group
                     ${activeTab === item.id 
-                      ? 'bg-white/10 text-white shadow-sm' 
-                      : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'}`}
+                      ? 'bg-accent-primary/10 text-accent-primary shadow-sm' 
+                      : 'text-text-secondary hover:text-text-primary hover:bg-white/5'}`}
                >
                   <div className={`${activeTab === item.id ? currentTheme.accent : 'group-hover:text-slate-300'} transition-colors`}>
                      {item.icon}
@@ -577,28 +597,28 @@ const Dashboard = () => {
             ))}
             
             <div className="pt-8 space-y-1">
-               <div className="px-4 mb-2 text-[10px] font-bold text-slate-600 uppercase">Secondary</div>
-               <button onClick={() => navigate("/settings")} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:text-white hover:bg-white/5">
+               <div className="px-4 mb-2 text-[10px] font-bold text-text-muted uppercase">Secondary</div>
+               <button onClick={() => navigate("/settings")} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/5">
                   <Icon.Settings className="w-4 h-4" />
                   <span className="text-xs font-bold">Settings</span>
                </button>
             </div>
          </nav>
 
-         <div className="p-6 border-t border-white/5 space-y-4">
+         <div className="p-6 border-t border-border-secondary space-y-4">
            <button 
              onClick={() => navigate('/profile')} 
              className="w-full group/profile flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 transition-all text-left"
            >
-              <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-sm font-black text-blue-400 group-hover/profile:border-blue-500/50 transition-all">
+              <div className="w-9 h-9 rounded-full bg-bg-surface border border-border-primary flex items-center justify-center text-sm font-black text-accent-primary group-hover/profile:border-accent-primary/50 transition-all">
                  {initial}
               </div>
               <div className="flex-1 min-w-0">
-                 <div className="text-sm font-bold text-white truncate">{displayName}</div>
-                 <div className="text-[10px] text-slate-500 truncate group-hover/profile:text-blue-400 transition-colors uppercase font-black">Pro Member</div>
+                 <div className="text-sm font-bold text-text-primary truncate">{displayName}</div>
+                 <div className="text-[10px] text-text-muted truncate group-hover/profile:text-accent-primary transition-colors uppercase font-black">Pro Member</div>
               </div>
            </button>
-           <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-400/5 transition-all text-[10px] font-black uppercase tracking-widest">
+           <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-text-muted hover:text-rose-400 hover:bg-rose-400/5 transition-all text-[10px] font-black uppercase tracking-widest">
              <Icon.LogOut className="w-4 h-4" /> Sign Out
            </button>
          </div>
@@ -608,15 +628,15 @@ const Dashboard = () => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-slate-950/40 backdrop-blur-xl shrink-0 z-40">
            <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest flex-1">
-              <span className="text-slate-500">Platform</span>
+              <span className="text-text-muted">Platform</span>
               <span className="text-slate-300">/</span>
-              <span className="text-blue-400">{navItems.find(n => n.id === activeTab)?.label}</span>
+              <span className="text-accent-primary">{navItems.find(n => n.id === activeTab)?.label}</span>
            </div>
 
            {/* Search Bar */}
            <div className="flex-1 max-w-md mx-4 relative group">
                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                   <Icon.Search className="w-4 h-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                   <Icon.Search className="w-4 h-4 text-text-muted group-focus-within:text-accent-primary transition-colors" />
                 </div>
                  <input 
                    type="text"
@@ -629,16 +649,16 @@ const Dashboard = () => {
                  <div className="absolute inset-y-0 right-3 flex items-center gap-2">
                     <button 
                       onClick={startVoiceSearch}
-                      className="text-slate-600 hover:text-blue-400 transition-colors"
+                      className="text-slate-600 hover:text-accent-primary transition-colors"
                       title="Voice Search"
                     >
                        <Icon.Zap className="w-4 h-4" />
                     </button>
-                    <div className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-[10px] font-mono text-slate-500">K</div>
+                    <div className="px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-[10px] font-mono text-text-muted">K</div>
                  </div>
                 
                 {showSearchSuggestions && searchTerm.length > 0 && (
-                   <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden z-100">
+                   <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary border border-border-primary rounded-xl shadow-2xl overflow-hidden z-100">
                       {filteredSuggestions.length > 0 ? (
                         filteredSuggestions.map((s, i) => (
                            <button 
@@ -647,17 +667,17 @@ const Dashboard = () => {
                                navigate(s.path);
                                setShowSearchSuggestions(false);
                              }}
-                             className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center justify-between border-b border-slate-800 last:border-0"
+                             className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center justify-between border-b border-border-primary last:border-0"
                            >
                               <div className="flex flex-col">
                                  <span className="text-sm font-bold text-white">{s.label}</span>
-                                 <span className="text-[10px] text-slate-500 uppercase font-black">{s.category}</span>
+                                 <span className="text-[10px] text-text-muted uppercase font-black">{s.category}</span>
                               </div>
                               <Icon.ChevronRight className="w-3 h-3 text-slate-600" />
                            </button>
                         ))
                       ) : (
-                        <div className="px-4 py-3 text-xs text-slate-500">No results found</div>
+                        <div className="px-4 py-3 text-xs text-text-muted">No results found</div>
                       )}
                    </div>
                 )}
@@ -666,7 +686,7 @@ const Dashboard = () => {
            <div className="flex-1 flex justify-end items-center gap-4">
               <button 
                 onClick={() => setNotification("You have 3 new adaptive challenges waiting.")} 
-                className="p-2 rounded-lg bg-slate-800/50 text-slate-400 hover:text-white transition-colors relative"
+                className="p-2 rounded-lg bg-bg-surface/50 text-text-secondary hover:text-white transition-colors relative"
               >
                  <Icon.Bell className="w-5 h-5" />
                  <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full border-2 border-slate-900" />
@@ -683,22 +703,22 @@ const Dashboard = () => {
                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                       <div>
                          <h1 className="text-4xl font-black text-white mb-2 tracking-tight">Welcome, {displayName}!</h1>
-                         <p className="text-slate-400 font-medium">Your personalized learning platform starts here.</p>
+                         <p className="text-text-secondary font-medium">Your personalized learning platform starts here.</p>
                       </div>
                    </div>
 
                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
                        <div className="xl:col-span-7 space-y-8">
                            {/* Skill Mastery Overiew - Redesigned for Beginner Clarity */}
-                           <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 backdrop-blur-md relative overflow-hidden group">
+                           <div className="bg-bg-secondary/50 border border-border-primary rounded-2xl p-8 backdrop-blur-md relative overflow-hidden group">
                               <div className="flex items-center justify-between mb-8">
                                  <h3 className="text-lg font-bold text-white flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/5">
-                                       <Icon.BarChart className="w-5 h-5 text-blue-400" />
+                                       <Icon.BarChart className="w-5 h-5 text-accent-primary" />
                                     </div>
                                     Skill Mastery Status
                                  </h3>
-                                 <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                 <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-text-secondary uppercase tracking-widest">
                                     ACTIVE
                                 </div>
                               </div>
@@ -708,16 +728,16 @@ const Dashboard = () => {
                                      {Object.entries(agentInsight?.analysis?.mastery_profile || {}).map(([skill, value], i) => (
                                         <div key={i} className="group/skill">
                                            <div className="flex items-center justify-between mb-2">
-                                              <span className="text-xs font-black text-white uppercase tracking-wider">{skill}</span>
+                                              <span className="text-xs font-black text-white uppercase tracking-wider cursor-help" title={skill}>{skill.replace(/_/g, " ")}</span>
                                               <div className="flex items-center gap-2">
-                                                 <span className={`text-[10px] font-black ${normalizeMasteryScore(value) < 0.4 ? 'text-amber-500' : 'text-blue-400'}`}>
+                                                 <span className={`text-[10px] font-black ${normalizeMasteryScore(value) < 0.4 ? 'text-amber-500' : 'text-accent-primary'}`}>
                                                     {formatMasteryPercent(value)}
                                                  </span>
                                                  
                                               </div>
                                            </div>
                                            
-                                           <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                                           <div className="w-full h-1 bg-bg-surface rounded-full overflow-hidden">
                                               <motion.div 
                                                  initial={{ width: 0 }}
                                                  animate={{ width: masteryWidth(value) }}
@@ -739,12 +759,12 @@ const Dashboard = () => {
 
                               <div className="bg-blue-500/5 border border-blue-500/10 p-5 rounded-2xl flex items-center gap-5">
                                  <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-                                    <Icon.Zap className="w-6 h-6 text-blue-400" />
+                                    <Icon.Zap className="w-6 h-6 text-accent-primary" />
                                  </div>
                                  <div>
                                     <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Agent Strategy</div>
-                                    <div className="text-xs text-slate-400 leading-relaxed font-medium">
-                                       I've detected your baseline is strong in <span className="text-white">Logic</span>. Focusing on <span className="text-blue-400">Syntax mastery</span> will yield the fastest growth this week.
+                                    <div className="text-xs text-text-secondary leading-relaxed font-medium">
+                                       I've detected your baseline is strong in <span className="text-white">Logic</span>. Focusing on <span className="text-accent-primary">Syntax mastery</span> will yield the fastest growth this week.
                                     </div>
                                  </div>
                               </div>
@@ -754,7 +774,7 @@ const Dashboard = () => {
                               {/* Quick Guide for New Users */}
                               <div className="bg-linear-to-br from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-2xl p-6 relative overflow-hidden h-full min-h-[320px]">
                                  <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-blue-500/20 blur-3xl rounded-full" />
-                                 <h3 className="text-sm font-black text-blue-400 uppercase tracking-widest mb-6">Getting Started</h3>
+                                 <h3 className="text-sm font-black text-accent-primary uppercase tracking-widest mb-6">Getting Started</h3>
                                  <div className="space-y-6">
                                     {[
                                       { step: 1, title: "Pick a Topic", desc: "Explore subjects in the 'Learn' section.", icon: "1️⃣" },
@@ -765,7 +785,7 @@ const Dashboard = () => {
                                         <div className="text-xl shrink-0">{item.icon}</div>
                                         <div>
                                           <div className="text-sm font-bold text-white">{item.title}</div>
-                                          <div className="text-xs text-slate-400 leading-relaxed">{item.desc}</div>
+                                          <div className="text-xs text-text-secondary leading-relaxed">{item.desc}</div>
                                         </div>
                                       </div>
                                     ))}
@@ -773,16 +793,16 @@ const Dashboard = () => {
                               </div>
 
                               {/* Current Focus Card */}
-                              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 h-full min-h-[320px] flex flex-col justify-between">
+                              <div className="bg-bg-secondary/50 border border-border-primary rounded-2xl p-6 h-full min-h-[320px] flex flex-col justify-between">
                                  <div>
-                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Recommended Focus</h3>
+                                    <h3 className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-4">Recommended Focus</h3>
                                     <div className="flex items-center gap-4 mb-4">
                                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                                           <Icon.Zap className="w-6 h-6 text-amber-500" />
                                        </div>
                                        <div>
                                           <div className="text-xl font-bold text-white">{agentInsight?.analysis?.recommended_focus}</div>
-                                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Baseline Path</div>
+                                          <div className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Baseline Path</div>
                                        </div>
                                     </div>
                                  </div>
@@ -804,9 +824,9 @@ const Dashboard = () => {
                                 <div className="flex items-center justify-between mb-8">
                                    <div className="flex items-center gap-2">
                                       <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] animate-pulse" />
-                                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Readiness Prediction</span>
+                                      <span className="text-[10px] font-black uppercase text-text-secondary tracking-[0.2em]">Readiness Prediction</span>
                                    </div>
-                                   <Icon.Award className="w-4 h-4 text-blue-400" />
+                                   <Icon.Award className="w-4 h-4 text-accent-primary" />
                                 </div>
 
                                 <div className="flex items-center justify-center py-4 relative mb-8">
@@ -820,7 +840,7 @@ const Dashboard = () => {
                                 </div>
 
                                 <div className="space-y-4">
-                                   <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest px-1">Company Fit Comparison</div>
+                                   <div className="text-[9px] font-black text-text-muted uppercase tracking-widest px-1">Company Fit Comparison</div>
                                    <div className="grid grid-cols-2 gap-2">
                                        {companies.map(c => {
                                           const fitScore = calculateCompanyFit(c.id, agentInsight?.analysis?.mastery_profile);
@@ -829,7 +849,7 @@ const Dashboard = () => {
                                             <div key={c.name} className={`${c.bg} border border-white/5 rounded-2xl p-3 flex items-center justify-between group/comp`}>
                                                <div className="flex flex-col">
                                                   <span className={`text-[10px] font-bold ${c.color}`}>{c.name}</span>
-                                                  <span className="text-[8px] text-slate-500 font-black">{Math.round(fitScore)}% Fit</span>
+                                                  <span className="text-[8px] text-text-muted font-black">{Math.round(fitScore)}% Fit</span>
                                                </div>
                                                <div className="flex items-center gap-1.5">
                                                   <div className={`w-1.5 h-1.5 rounded-full ${isReady ? "bg-green-500 shadow-[0_0_5px_#22c55e]" : "bg-slate-700"}`} />
@@ -841,10 +861,10 @@ const Dashboard = () => {
                                    </div>
                                    <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-blue-500/10 transition-colors">
                                       <div className="flex items-center gap-2 mb-2">
-                                         <Icon.Brain className="w-4 h-4 text-blue-400" />
+                                         <Icon.Brain className="w-4 h-4 text-accent-primary" />
                                          <span className="text-[10px] font-bold text-white uppercase tracking-tight">AI Readiness Insight</span>
                                       </div>
-                                      <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+                                      <p className="text-[11px] text-text-secondary leading-relaxed font-medium">
                                          {readinessScore > 80 
                                             ? "You're in the elite bracket. Focus on behavioral 'STAR' answers to finalize Meta/Google prep." 
                                             : "Broaden your High-Level System Design knowledge. This is your primary blocker for L5 roles."}
@@ -859,15 +879,15 @@ const Dashboard = () => {
                             <div className="flex items-center justify-between mb-8">
                                <div className="flex items-center gap-2">
                                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
-                                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Today's Challenge</span>
+                                  <span className="text-[10px] font-black uppercase text-text-secondary tracking-widest">Today's Challenge</span>
                                </div>
-                               <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                               <div className="flex items-center gap-1.5 text-[9px] font-bold text-text-muted bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
                                   <Icon.Zap className="w-3 h-3 text-amber-500" />
                                   STREAK: {potd.streak}
                                </div>
                             </div>
                             
-                            <h4 className="text-2xl font-black text-white mb-3 tracking-tight group-hover:text-blue-400 transition-colors">
+                            <h4 className="text-2xl font-black text-white mb-3 tracking-tight group-hover:text-accent-primary transition-colors">
                                {potd.title}
                             </h4>
                             <div className="flex items-center gap-4 mb-8">
@@ -886,7 +906,7 @@ const Dashboard = () => {
                                </button>
                                <div className="text-right">
                                   <div className="text-[8px] font-bold text-slate-600 uppercase mb-0.5">Expires</div>
-                                  <div className="text-[10px] font-black text-slate-400 font-mono tracking-tighter">{potd.timeLeft}</div>
+                                  <div className="text-[10px] font-black text-text-secondary font-mono tracking-tighter">{potd.timeLeft}</div>
                                </div>
                             </div>
                          </div>
@@ -895,7 +915,7 @@ const Dashboard = () => {
 
                     {/* NEW: Learning Velocity & Activity Feed */}
                     <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 mt-8">
-                       <div className="xl:col-span-8 bg-slate-900/50 border border-slate-800 rounded-2xl p-8 backdrop-blur-md">
+                       <div className="xl:col-span-8 bg-bg-secondary/50 border border-border-primary rounded-2xl p-8 backdrop-blur-md">
                           <h3 className="text-lg font-bold text-white flex items-center gap-3 mb-6">
                              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shadow-lg shadow-purple-500/5">
                                 <Icon.BarChart className="w-5 h-5 text-purple-400" />
@@ -904,17 +924,17 @@ const Dashboard = () => {
                           </h3>
                           <div className="mt-8 rounded-2xl border border-white/5 bg-black/10 p-5">
                              <div className="flex items-center justify-between gap-4 mb-5">
-                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">
                                    Consistency Heatmap
                                 </div>
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-text-muted">
                                    <span>Less</span>
                                    {[0, 1, 2, 3, 4].map((level) => (
                                       <div
                                         key={level}
                                         className={`w-3 h-3 rounded-[4px] border ${
                                           level === 0
-                                            ? "bg-slate-800 border-slate-700/60"
+                                            ? "bg-bg-surface border-border-secondary/60"
                                             : level === 1
                                             ? "bg-blue-500/60 border-blue-400/40"
                                             : level === 2
@@ -958,7 +978,7 @@ const Dashboard = () => {
                                              className={`w-full aspect-square rounded-[10px] border transition-all duration-300 group-hover/heat:scale-105 ${getVelocityCellClass(day.value, maxVelocityValue)}`}
                                              title={`${day.label}: ${day.value} XP`}
                                            />
-                                           <div className="text-[9px] font-bold text-slate-500 opacity-0 group-hover/heat:opacity-100 transition-opacity">
+                                           <div className="text-[9px] font-bold text-text-muted opacity-0 group-hover/heat:opacity-100 transition-opacity">
                                               {day.value > 0 ? `${day.value} XP` : "No activity"}
                                            </div>
                                         </div>
@@ -969,12 +989,12 @@ const Dashboard = () => {
                           </div>
                        </div>
 
-                       <div className="xl:col-span-4 bg-slate-900/50 border border-slate-800 rounded-2xl p-8 backdrop-blur-md h-full">
-                          <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-6">Recent Milestones</h3>
-                          <div className="space-y-6 relative before:absolute before:inset-y-0 before:left-[11px] before:w-px before:bg-slate-800">
+                       <div className="xl:col-span-4 bg-bg-secondary/50 border border-border-primary rounded-2xl p-8 backdrop-blur-md h-full">
+                          <h3 className="text-sm font-black text-text-muted uppercase tracking-widest mb-6">Recent Milestones</h3>
+                          <div className="space-y-6 relative before:absolute before:inset-y-0 before:left-[11px] before:w-px before:bg-bg-surface">
                              {(recentMilestones.length > 0 ? recentMilestones : []).map((evt, i) => (
                                 <div key={i} className="flex gap-4 relative">
-                                   <div className="w-6 h-6 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-[10px] shrink-0 z-10">
+                                   <div className="w-6 h-6 rounded-full bg-bg-secondary border border-border-secondary flex items-center justify-center text-[10px] shrink-0 z-10">
                                       {evt.icon}
                                    </div>
                                    <div>
@@ -984,7 +1004,7 @@ const Dashboard = () => {
                                 </div>
                              ))}
                              {recentMilestones.length === 0 && (
-                                <div className="text-xs text-slate-500">Complete an assessment or solve today&apos;s challenge to populate this feed.</div>
+                                <div className="text-xs text-text-muted">Complete an assessment or solve today&apos;s challenge to populate this feed.</div>
                              )}
                           </div>
                           <button className="w-full mt-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-bold text-white uppercase tracking-widest transition-all">
@@ -999,22 +1019,22 @@ const Dashboard = () => {
                  <div className="max-w-6xl mx-auto space-y-12">
                    {selectedDomain ? (
                     <div>
-                      <button onClick={() => setSelectedDomain(null)} className="flex items-center gap-2 text-slate-400 hover:text-white mb-8 group">
+                      <button onClick={() => setSelectedDomain(null)} className="flex items-center gap-2 text-text-secondary hover:text-white mb-8 group">
                         <Icon.ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to Sections
                       </button>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {(activeTab === 'concept' ? conceptDomains : problemDomains)
                           .find(d => d.id === selectedDomain)?.subDomains?.map(sub => (
                           <button key={sub.id} onClick={() => navigate(`${activeTab === 'concept' ? '/assessment' : '/problem-assessment'}?domain=${selectedDomain}&subtopic=${sub.id}`)}
-                            className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl hover:border-blue-500/50 transition-all text-left group">
+                            className="bg-bg-secondary/40 border border-border-primary p-6 rounded-2xl hover:border-blue-500/50 transition-all text-left group">
                             <div className="flex items-center justify-between mb-4">
-                               <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                               <div className="w-10 h-10 rounded-xl bg-bg-surface flex items-center justify-center text-accent-primary group-hover:scale-110 transition-transform">
                                   <Icon.BookOpen className="w-5 h-5" />
                                </div>
-                               <span className="text-[10px] font-bold uppercase py-1 px-2 rounded-md bg-slate-800 text-slate-400">{sub.difficulty}</span>
+                               <span className="text-[10px] font-bold uppercase py-1 px-2 rounded-md bg-bg-surface text-text-secondary">{sub.difficulty}</span>
                             </div>
                             <h4 className="font-bold text-white mb-1">{sub.title}</h4>
-                            <p className="text-xs text-slate-500">Personalized pathway ready.</p>
+                            <p className="text-xs text-text-muted">Personalized pathway ready.</p>
                           </button>
                         ))}
                       </div>
@@ -1031,7 +1051,7 @@ const Dashboard = () => {
                                  {activeTab === 'concept' ? <Icon.BookOpen className={`w-6 h-6 ${style.icon}`} /> : <Icon.Code className={`w-6 h-6 ${style.icon}`} />}
                               </div>
                               <h3 className="text-xl font-bold text-white mb-2">{domain.title}</h3>
-                              <p className="text-sm text-slate-400 mb-6 leading-relaxed">{domain.description}</p>
+                              <p className="text-sm text-text-secondary mb-6 leading-relaxed">{domain.description}</p>
                               <div className="flex items-center gap-2 text-xs font-bold text-white/50 group-hover:text-white transition-colors">
                                  EXPLORE <Icon.ChevronRight className="w-3 h-3" />
                               </div>
@@ -1048,19 +1068,19 @@ const Dashboard = () => {
                 <div className="max-w-4xl mx-auto space-y-6">
                    <div className="mb-10 text-center">
                       <h1 className="text-4xl font-black text-white mb-4">Interview Simulator</h1>
-                      <p className="text-slate-400">Adaptive mock interviews tailored to your target company.</p>
+                      <p className="text-text-secondary">Adaptive mock interviews tailored to your target company.</p>
                    </div>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {examDomains.map(exam => (
                          <button key={exam.id} onClick={() => handleSelection(exam.id)}
-                           className="bg-slate-900/50 border border-slate-800 p-8 rounded-2xl hover:border-blue-500/50 transition-all text-left relative group">
-                            <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-8 group-hover:scale-110 transition-transform">
+                           className="bg-bg-secondary/50 border border-border-primary p-8 rounded-2xl hover:border-blue-500/50 transition-all text-left relative group">
+                            <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-accent-primary mb-8 group-hover:scale-110 transition-transform">
                                <Icon.Award className="w-8 h-8" />
                             </div>
                             <span className="absolute top-8 right-8 text-[10px] font-black uppercase text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">{exam.badge}</span>
                             <h3 className="text-2xl font-bold text-white mb-4">{exam.title}</h3>
-                            <p className="text-slate-400 text-sm leading-relaxed mb-8">{exam.description}</p>
-                            <div className="flex items-center gap-2 text-xs font-bold text-blue-400">
+                            <p className="text-text-secondary text-sm leading-relaxed mb-8">{exam.description}</p>
+                            <div className="flex items-center gap-2 text-xs font-bold text-accent-primary">
                                START SIMULATION <Icon.ChevronRight className="w-3 h-3" />
                             </div>
                          </button>
@@ -1073,12 +1093,12 @@ const Dashboard = () => {
                   <div className="max-w-4xl mx-auto py-10 space-y-12">
                      <div>
                         <h1 className="text-4xl font-black text-white mb-2 tracking-tight">System Settings</h1>
-                        <p className="text-slate-400 font-medium">Configure your AI workspace behavior and appearance.</p>
+                        <p className="text-text-secondary font-medium">Configure your AI workspace behavior and appearance.</p>
                      </div>
 
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Appearance Card */}
-                        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 backdrop-blur-md">
+                        <div className="bg-bg-secondary/40 border border-border-primary rounded-2xl p-8 backdrop-blur-md">
                            <h3 className="text-sm font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
                               <Icon.Settings className={`w-4 h-4 ${currentTheme.accent}`} />
                               Appearance
@@ -1086,27 +1106,27 @@ const Dashboard = () => {
                            
                            <div className="space-y-8">
                               <div>
-                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-4">Workspace appearance</label>
+                                 <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block mb-4">Workspace appearance</label>
                                  <div className="grid grid-cols-2 gap-4">
                                     <button 
                                       onClick={() => setAppearance('glass')}
-                                      className={`p-4 rounded-2xl border transition-all text-left group ${appearance === 'glass' ? `${currentTheme.bg} ${currentTheme.border} border-opacity-100` : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
+                                      className={`p-4 rounded-2xl border transition-all text-left group ${appearance === 'glass' ? `${currentTheme.bg} ${currentTheme.border} border-opacity-100` : 'bg-slate-950 border-border-primary hover:border-border-secondary'}`}
                                     >
                                        <div className="text-sm font-bold text-white mb-1">Cyber Glass</div>
-                                       <div className="text-[10px] text-slate-500">Translucent & Vibrant</div>
+                                       <div className="text-[10px] text-text-muted">Translucent & Vibrant</div>
                                     </button>
                                     <button 
                                       onClick={() => setAppearance('dark')}
-                                      className={`p-4 rounded-2xl border transition-all text-left group ${appearance === 'dark' ? 'bg-slate-800 border-white/40' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
+                                      className={`p-4 rounded-2xl border transition-all text-left group ${appearance === 'dark' ? 'bg-bg-surface border-white/40' : 'bg-slate-950 border-border-primary hover:border-border-secondary'}`}
                                     >
                                        <div className="text-sm font-bold text-white mb-1">Deep Dark</div>
-                                       <div className="text-[10px] text-slate-500">Solid & High Contrast</div>
+                                       <div className="text-[10px] text-text-muted">Solid & High Contrast</div>
                                     </button>
                                  </div>
                               </div>
 
                               <div>
-                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-4">Accent Color</label>
+                                 <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block mb-4">Accent Color</label>
                                  <div className="flex gap-4">
                                     {['blue', 'cyan', 'rose', 'amber'].map(color => (
                                        <button 
@@ -1125,45 +1145,45 @@ const Dashboard = () => {
                         </div>
 
                         {/* AI Behavior Card */}
-                        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 backdrop-blur-md">
+                        <div className="bg-bg-secondary/40 border border-border-primary rounded-2xl p-8 backdrop-blur-md">
                            <h3 className="text-sm font-black text-white uppercase tracking-widest mb-8 flex items-center gap-3">
                               <Icon.Agent className={`w-4 h-4 ${currentTheme.accent}`} />
                               AI Assistant Settings
                            </h3>
                            <div className="space-y-6">
-                              <div className="flex items-center justify-between p-4 bg-slate-950/50 rounded-2xl border border-slate-800">
+                              <div className="flex items-center justify-between p-4 bg-slate-950/50 rounded-2xl border border-border-primary">
                                  <div>
                                     <div className="text-sm font-bold text-white mb-1">High Contrast Mode</div>
-                                    <div className="text-[10px] text-slate-500">Boost visibility for charts</div>
+                                    <div className="text-[10px] text-text-muted">Boost visibility for charts</div>
                                  </div>
-                                 <div className="w-10 h-5 bg-slate-800 rounded-full relative cursor-pointer">
+                                 <div className="w-10 h-5 bg-bg-surface rounded-full relative cursor-pointer">
                                     <div className="absolute top-1 left-1 w-3 h-3 bg-slate-500 rounded-full" />
                                  </div>
                               </div>
-                              <div className="flex items-center justify-between p-4 bg-slate-950/50 rounded-2xl border border-slate-800">
+                              <div className="flex items-center justify-between p-4 bg-slate-950/50 rounded-2xl border border-border-primary">
                                  <div>
                                     <div className="text-sm font-bold text-white mb-1">Reduced Motion</div>
-                                    <div className="text-[10px] text-slate-500">Simplify UI animations</div>
+                                    <div className="text-[10px] text-text-muted">Simplify UI animations</div>
                                  </div>
-                                 <div className="w-10 h-5 bg-slate-800 rounded-full relative cursor-pointer">
+                                 <div className="w-10 h-5 bg-bg-surface rounded-full relative cursor-pointer">
                                     <div className="absolute top-1 left-1 w-3 h-3 bg-slate-500 rounded-full" />
                                  </div>
                               </div>
-                              <div className="flex items-center justify-between p-4 bg-slate-950/50 rounded-2xl border border-slate-800">
+                              <div className="flex items-center justify-between p-4 bg-slate-950/50 rounded-2xl border border-border-primary">
                                  <div>
                                     <div className="text-sm font-bold text-white mb-1">Adaptive Learning</div>
-                                    <div className="text-[10px] text-slate-500">AI adjusts difficulty based on performance</div>
+                                    <div className="text-[10px] text-text-muted">AI adjusts difficulty based on performance</div>
                                  </div>
-                                 <div className="w-10 h-5 bg-slate-800 rounded-full relative cursor-pointer">
+                                 <div className="w-10 h-5 bg-bg-surface rounded-full relative cursor-pointer">
                                     <div className="absolute top-1 left-3 w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                                  </div>
                               </div>
-                              <div className="flex items-center justify-between p-4 bg-slate-950/50 rounded-2xl border border-slate-800">
+                              <div className="flex items-center justify-between p-4 bg-slate-950/50 rounded-2xl border border-border-primary">
                                  <div>
                                     <div className="text-sm font-bold text-white mb-1">Personalized Feedback</div>
-                                    <div className="text-[10px] text-slate-500">AI provides tailored insights and suggestions</div>
+                                    <div className="text-[10px] text-text-muted">AI provides tailored insights and suggestions</div>
                                  </div>
-                                 <div className="w-10 h-5 bg-slate-800 rounded-full relative cursor-pointer">
+                                 <div className="w-10 h-5 bg-bg-surface rounded-full relative cursor-pointer">
                                     <div className="absolute top-1 left-3 w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                                  </div>
                               </div>
@@ -1185,16 +1205,16 @@ const Dashboard = () => {
       <AnimatePresence>
         {notification && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-100 bg-slate-900/95 backdrop-blur-2xl border border-blue-500/30 px-8 py-5 rounded-2xl shadow-3xl min-w-[320px]">
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-100 bg-bg-secondary/95 backdrop-blur-2xl border border-blue-500/30 px-8 py-5 rounded-2xl shadow-3xl min-w-[320px]">
             <div className="flex items-center gap-5">
               <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                <Icon.Cpu className="w-6 h-6 text-blue-400 animate-pulse" />
+                <Icon.Cpu className="w-6 h-6 text-accent-primary animate-pulse" />
               </div>
               <div className="flex-1">
                 <div className="text-[10px] font-black uppercase text-blue-500 mb-1">Alert</div>
                 <div className="text-sm font-bold text-white">{notification}</div>
               </div>
-              <button onClick={() => setNotification(null)} className="text-slate-500 hover:text-white"><Icon.LogOut className="w-4 h-4 rotate-45" /></button>
+              <button onClick={() => setNotification(null)} className="text-text-muted hover:text-white"><Icon.LogOut className="w-4 h-4 rotate-45" /></button>
             </div>
           </motion.div>
         )}
@@ -1209,13 +1229,13 @@ const Dashboard = () => {
                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
                  className="pointer-events-auto"
                >
-                  <div className={`bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-3xl transition-all duration-500 pointer-events-auto
+                  <div className={`bg-bg-secondary/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-3xl transition-all duration-500 pointer-events-auto
                       ${isTraceMinimized ? 'w-48 h-12 flex items-center p-3 rounded-full cursor-pointer hover:border-blue-500/50' : 'w-80 h-auto'}`}
                       onClick={() => isTraceMinimized && setIsTraceMinimized(false)}>
                       <div className="flex items-center justify-between pointer-events-none w-full">
                          <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full animate-pulse ${currentTheme.bar}`} />
-                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Agent Analysis</span>
+                            <span className="text-[10px] font-black uppercase text-text-muted tracking-widest">Agent Analysis</span>
                          </div>
                          <button 
                             className="pointer-events-auto text-slate-600 hover:text-white transition-colors"
@@ -1238,14 +1258,14 @@ const Dashboard = () => {
                                ].map((log, i) => (
                                   <div key={i} className="flex gap-3">
                                      <div className="flex flex-col items-center gap-1">
-                                        <div className={`w-1 h-full rounded-full ${i === 0 ? currentTheme.bar : 'bg-slate-800'}`} />
+                                        <div className={`w-1 h-full rounded-full ${i === 0 ? currentTheme.bar : 'bg-bg-surface'}`} />
                                      </div>
                                      <div>
                                         <div className="flex items-center gap-2">
                                            <span className="text-[9px] font-bold text-white uppercase">{log.agent}</span>
                                            <span className="text-[8px] text-slate-600 font-mono">{log.time}</span>
                                         </div>
-                                        <div className="text-[11px] text-slate-400 font-medium leading-relaxed">{log.msg}</div>
+                                        <div className="text-[11px] text-text-secondary font-medium leading-relaxed">{log.msg}</div>
                                      </div>
                                   </div>
                                ))}
@@ -1259,7 +1279,7 @@ const Dashboard = () => {
                                      </div>
                                   ))}
                                </div>
-                               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">3 Agents active</span>
+                               <span className="text-[9px] font-bold text-text-muted uppercase tracking-widest">3 Agents active</span>
                             </div>
                          </div>
                       )}

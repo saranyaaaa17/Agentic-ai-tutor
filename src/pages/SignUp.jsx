@@ -59,7 +59,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050B14] text-white flex relative overflow-hidden font-sans selection:bg-purple-500/30">
+    <div className="min-h-screen bg-bg-primary text-text-primary flex relative overflow-hidden font-sans selection:bg-purple-500/30">
       
        {/* Absolute Back Button */}
       <div className="absolute top-8 left-8 z-50">
@@ -67,8 +67,8 @@ const SignUp = () => {
       </div>
 
        {/* Left Panel - Branding */}
-      <div className="hidden lg:flex w-1/2 relative items-center justify-center p-12 bg-slate-900 border-r border-white/5">
-        <div className="absolute inset-0 bg-[#0F172A]">
+      <div className="hidden lg:flex w-1/2 relative items-center justify-center p-12 bg-bg-surface/50 border-r border-white/5">
+        <div className="absolute inset-0 bg-bg-primary">
            <div className="absolute top-0 left-0 w-full h-[500px] bg-purple-500/20 blur-[120px] rounded-full pointer-events-none opacity-50 mix-blend-screen" />
            <div className="absolute bottom-0 right-0 w-full h-[500px] bg-pink-600/20 blur-[120px] rounded-full pointer-events-none opacity-50 mix-blend-screen" />
            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-20 mask-[linear-gradient(180deg,white,rgba(255,255,255,0))]" />
@@ -89,7 +89,7 @@ const SignUp = () => {
                   Start Your <br/>
                   <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500">Journey.</span>
                 </h1>
-                <p className="text-slate-400 text-lg leading-relaxed mb-8">
+                <p className="text-text-secondary text-lg leading-relaxed mb-8">
                   Create your profile to unlock personalized learning paths, AI-powered lessons, and clear progress tracking.
                 </p>
                 
@@ -123,7 +123,7 @@ const SignUp = () => {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-slate-900/50 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden"
+                className="bg-bg-secondary/50 backdrop-blur-xl border border-border-primary p-8 rounded-3xl shadow-2xl relative overflow-hidden"
               >
                  <h2 className="text-2xl font-bold mb-6 text-center">Create Account</h2>
 
@@ -148,7 +148,7 @@ const SignUp = () => {
                  </div>
 
                  {error && (
-                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm font-medium flex items-center gap-2">
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-3 bg-error/10 border border-error/30 rounded-lg text-error text-sm font-medium flex items-center gap-2">
                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                        {error}
                     </motion.div>
@@ -156,25 +156,25 @@ const SignUp = () => {
 
                  <form onSubmit={handleSignUp} className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Email Address</label>
+                      <label className="block text-xs font-bold text-text-secondary mb-1 uppercase tracking-wider">Email Address</label>
                       <input
                         type="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-600"
+                        className="w-full bg-bg-surface border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all placeholder:text-slate-600"
                         placeholder="you@example.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Password</label>
+                      <label className="block text-xs font-bold text-text-secondary mb-1 uppercase tracking-wider">Password</label>
                       <div className="relative">
                         <input
                           type={showPassword ? "text" : "password"}
                           required
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className={`w-full bg-slate-950 border ${!password ? 'border-slate-700' : isPasswordValid ? 'border-green-500/50' : 'border-red-500/50'} rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 transition-all placeholder:text-slate-600 pr-10`}
+                          className={`w-full bg-bg-surface border ${!password ? 'border-slate-700' : isPasswordValid ? 'border-green-500/50' : 'border-red-500/50'} rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 transition-all placeholder:text-slate-600 pr-10`}
                           placeholder="••••••••"
                         />
                         <button
@@ -224,7 +224,7 @@ const SignUp = () => {
                     </button>
                  </form>
 
-                 <div className="mt-8 text-center text-sm text-slate-400">
+                 <div className="mt-8 text-center text-sm text-text-secondary">
                    Already have an account?{" "}
                    <Link to="/login" className="text-purple-400 hover:text-purple-300 font-bold hover:underline">
                      Sign in

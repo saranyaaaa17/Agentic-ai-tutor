@@ -1,36 +1,29 @@
-# 🚀 Project Launch Instructions
+### 🚀 Quick Start (One-Click)
+The easiest way to start both the backend and frontend together:
 
-To run the **Agentic AI Tutor** in full working mode, you need to open **two separate terminals** and run the following commands.
-
-### 🟢 Terminal 1: Start the AI Backend (Python)
-
-This powers the AI Agents (Teacher, Evaluator, Strategy).
-
-1. Navigate to the backend folder:
-
-   ```powershell
-   cd "backend_python"
-   ```
-
-2. Run the server:
-   ```powershell
-   python main.py
-   ```
-   _(Wait until you see: "Application startup complete" and "Uvicorn running on http://0.0.0.0:8000")_
+1. Double-click `run_all.bat` in the project root.
+   _This handles the virtual environment, starts the backend on port 8000, and verifies all AI dependencies._
 
 ---
 
-### 🔵 Terminal 2: Start the Frontend (React)
+### 🟢 Manual Backend Start (Python)
+If you prefer to run things separately, follow these steps in your terminal:
 
-This launches the user interface.
-
-1. Navigate to the project root (if you are not already there):
-
+1. Start from the project root:
    ```powershell
-   cd ..
+   .venv\Scripts\python.exe -m uvicorn backend_python.main:app --host 0.0.0.0 --port 8000 --reload
    ```
+   _(Alternatively, `cd backend_python` and run `..\.venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload`)_
 
-   _(Or just open a new terminal in the main project folder)_
+---
+
+### 🔵 Manual Frontend Start (React)
+Open a separate terminal in the project root:
+
+1. Install dependencies (if you haven't yet):
+   ```powershell
+   npm install
+   ```
 
 2. Run the development server:
    ```powershell
@@ -41,7 +34,7 @@ This launches the user interface.
 ---
 
 ### ✅ Verification
-
 1. Open your browser to **http://localhost:5173**.
-2. The AI backend logs will appear in **Terminal 1** as you interact with the app.
+2. If you see "⚠️ AI SERVICE OFFLINE," ensure the Python backend terminal is running and says "Application startup complete."
+
 

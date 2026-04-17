@@ -17,16 +17,17 @@ import DailyChallengePage from "./pages/DailyChallengePage";
 import Socratic from "./components/chat/Socratic";
 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ContactSupport from "./pages/ContactSupport";
 
 import { SettingsProvider } from "./context/SettingsContext";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
     <SettingsProvider>
+      <AuthProvider>
       <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -97,6 +98,7 @@ function App() {
       </Routes>
       <Socratic />
     </BrowserRouter>
+    </AuthProvider>
   </SettingsProvider>
   );
 }

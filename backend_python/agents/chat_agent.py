@@ -1,8 +1,18 @@
 import os
 import json
-from groq import AsyncGroq
+import re
 from dotenv import load_dotenv
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
+try:
+    from agents.llm_utils import llm_service
+except ImportError:
+    from llm_utils import llm_service
+
+load_dotenv()
+# Also try parent directory
+env_path = os.path.join(os.path.dirname(__file__), '../../.env')
+if os.path.exists(env_path):
+    load_dotenv(env_path)
 try:
     from agents.retriever import get_platform_knowledge
 except ImportError:
@@ -90,8 +100,8 @@ STRICT OPERATIONAL DIRECTIVES:
 
 class NewTutorAgent:
     def __init__(self):
-        self.client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
-        self.model = "llama-3.3-70b-versatile"
+        # We now use the unified llm_service
+        pass
 
     async def chat(self, user_input: str, history: List[Dict[str, str]] = [], complexity: int = 3, socratic_mode: bool = False) -> Dict[str, Any]:
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -109,28 +119,28 @@ class NewTutorAgent:
             if role and content:
                 messages.append({"role": role, "content": str(content)})
                 
+        # Inject platform KB if not already there
+        # messages[0]["content"] already has PLATFORM_KB
+                
         prompt = f"[Target Complexity: Level {complexity}/5]\nUser Question: {user_input}"
         messages.append({"role": "user", "content": prompt})
 
         try:
-            completion = await self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=0.8, # Increased for more comprehensive synthesis
-                response_format={"type": "json_object"}
-            )
-            raw_content = completion.choices[0].message.content
-            # Ensure it is parsed properly
-            result = json.loads(raw_content)
-            if "response" not in result:
-                result["response"] = "I received the message but the output format was unexpected."
-            if "thinking_steps" not in result:
-                result["thinking_steps"] = ["Processing..."]
+            raw_content = await llm_service.call_llm(messages, temperature=0.8, json_mode=True, agent_name="ChatAgent")
+            if not raw_content:
+                raise Exception("No response from LLM service")
+                
+            result = llm_service.parse_json(raw_content)
+            if not result or "response" not in result:
+                result = {
+                    "response": raw_content if raw_content else "I'm having trouble formatting my response. Please try again.",
+                    "thinking_steps": ["Formatting error"]
+                }
             return result
         except Exception as e:
             return {
                 "thinking_steps": ["System encountered a neural fault", str(e)],
-                "response": "I'm sorry, I encountered an error while processing your request. Please try again."
+                "response": "I'm sorry, I'm currently experiencing some technical difficulties with my core intelligence. Please try again in a few moments."
             }
 
 # Singleton

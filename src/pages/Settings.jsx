@@ -67,11 +67,11 @@ const Settings = () => {
   const currentLanguage = useMemo(() => languageOptions.find((item) => item.value === language)?.label || "English (US)", [language]);
   const currentSpoken = useMemo(() => languageOptions.find((item) => item.value === spokenLanguage)?.label || "English (US)", [spokenLanguage]);
 
-  const pageClass = resolvedTheme === "light" ? "bg-slate-50 text-slate-900" : "bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.08),transparent_20%),#020617] text-slate-100";
-  const cardClass = resolvedTheme === "light" ? "bg-white border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.08)]" : "bg-slate-900/70 border-white/10 shadow-[0_28px_80px_rgba(2,6,23,0.6)]";
-  const muteClass = resolvedTheme === "light" ? "text-slate-500" : "text-slate-400";
-  const chipClass = resolvedTheme === "light" ? "border-slate-200 bg-slate-50" : "border-white/10 bg-slate-950/60";
-  const inputClass = resolvedTheme === "light" ? "bg-slate-50 border-slate-200 text-slate-900" : "bg-slate-950/70 border-white/10 text-white";
+  const pageClass = "bg-bg-primary text-text-primary";
+  const cardClass = "bg-bg-secondary/70 border-border-primary shadow-xl backdrop-blur-md";
+  const muteClass = "text-text-secondary";
+  const chipClass = "border-border-primary bg-bg-surface/60";
+  const inputClass = "bg-bg-surface/70 border-border-primary text-text-primary";
 
   const handleSignOut = async () => {
     try {
@@ -91,15 +91,15 @@ const Settings = () => {
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-500 ${pageClass}`}>
-      <header className={`sticky top-0 z-40 border-b backdrop-blur-xl ${resolvedTheme === "light" ? "border-slate-200 bg-white/80" : "border-white/10 bg-slate-950/70"}`}>
+      <header className="sticky top-0 z-40 border-b border-border-primary bg-bg-primary/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <Logo />
           <div className="flex items-center gap-3 text-sm">
-            <button onClick={() => navigate("/dashboard")} className={`flex items-center gap-2 rounded-full px-4 py-2 transition-colors ${resolvedTheme === "light" ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+            <button onClick={() => navigate("/dashboard")} className={`flex items-center gap-2 rounded-full px-4 py-2 transition-colors text-text-secondary hover:bg-white/5 hover:text-text-primary`}>
               <Icon.ArrowLeft className="h-4 w-4" />
               Dashboard
             </button>
-            <button onClick={() => navigate("/profile")} className={`rounded-full px-4 py-2 transition-colors ${resolvedTheme === "light" ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>
+            <button onClick={() => navigate("/profile")} className={`rounded-full px-4 py-2 transition-colors text-text-secondary hover:bg-white/5 hover:text-text-primary`}>
               Profile
             </button>
           </div>

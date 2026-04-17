@@ -39,8 +39,8 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [masteryData, setMasteryData] = useState(defaultMastery);
-  const [challengeState, setChallengeState] = useState(() => getDailyChallengeState());
-  const [recentMilestones, setRecentMilestones] = useState(() => getRecentMilestones(4));
+  const [challengeState, setChallengeState] = useState(() => getDailyChallengeState(user?.id));
+  const [recentMilestones, setRecentMilestones] = useState(() => getRecentMilestones(user?.id, 4));
 
   useEffect(() => {
     if (user?.user_metadata?.display_name) {
@@ -62,14 +62,14 @@ const Profile = () => {
 
   useEffect(() => {
     const refreshSignals = () => {
-      setChallengeState(getDailyChallengeState());
-      setRecentMilestones(getRecentMilestones(4));
+      setChallengeState(getDailyChallengeState(user?.id));
+      setRecentMilestones(getRecentMilestones(user?.id, 4));
     };
 
     refreshSignals();
     window.addEventListener("focus", refreshSignals);
     return () => window.removeEventListener("focus", refreshSignals);
-  }, []);
+  }, [user?.id]);
 
   const initial = (displayName || user?.email || "?").charAt(0).toUpperCase();
   const userName = displayName || user?.email?.split("@")[0] || "Learner";
@@ -111,16 +111,16 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.08),transparent_20%),#020617] text-slate-100 font-sans">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
+    <div className="min-h-screen bg-bg-primary text-text-primary font-sans">
+      <header className="sticky top-0 z-40 border-b border-border-primary bg-bg-secondary/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <Logo />
           <div className="flex items-center gap-3 text-sm">
-            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 rounded-full px-4 py-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-white">
+            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 rounded-full px-4 py-2 text-text-secondary transition-colors hover:bg-white/5 hover:text-white">
               <Icon.ArrowLeft className="h-4 w-4" />
               Dashboard
             </button>
-            <button onClick={() => navigate("/settings")} className="rounded-full px-4 py-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-white">
+            <button onClick={() => navigate("/settings")} className="rounded-full px-4 py-2 text-text-secondary transition-colors hover:bg-white/5 hover:text-white">
               Settings
             </button>
           </div>
@@ -145,30 +145,30 @@ const Profile = () => {
       </AnimatePresence>
 
       <main className="mx-auto max-w-7xl px-6 py-8 space-y-6">
-        <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="rounded-[32px] border border-white/10 bg-slate-900/70 p-8 shadow-[0_28px_80px_rgba(2,6,23,0.6)]">
+        <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="rounded-[32px] border border-border-primary bg-bg-secondary/70 p-8 shadow-[0_28px_80px_rgba(2,6,23,0.6)]">
           <div className="grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.95fr)] xl:items-center">
             <div className="flex items-center gap-5">
-              <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-[var(--accent-secondary)] text-4xl font-black text-[var(--accent-primary)] shadow-[0_18px_40px_rgba(15,23,42,0.35)]">
+              <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-(--accent-secondary) text-4xl font-black text-(--accent-primary) shadow-[0_18px_40px_rgba(15,23,42,0.35)]">
                 {initial}
               </div>
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.32em] text-[var(--accent-primary)]">Learner Profile</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.32em] text-(--accent-primary)">Learner Profile</p>
                 <h1 className="mt-2 text-4xl font-black tracking-tight text-white">{userName}</h1>
-                <p className="mt-2 text-sm text-slate-400">{user?.email}</p>
+                <p className="mt-2 text-sm text-text-secondary">{user?.email}</p>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--accent-primary)]">Readiness</p>
+              <div className="rounded-2xl border border-border-primary bg-bg-secondary/60 px-4 py-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-(--accent-primary)">Readiness</p>
                 <p className="mt-2 text-2xl font-black text-white">{readiness}%</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--accent-primary)]">Strongest</p>
+              <div className="rounded-2xl border border-border-primary bg-bg-secondary/60 px-4 py-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-(--accent-primary)">Strongest</p>
                 <p className="mt-2 text-sm font-bold text-white">{strongestSkill[0]}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--accent-primary)]">Focus Next</p>
+              <div className="rounded-2xl border border-border-primary bg-bg-secondary/60 px-4 py-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-(--accent-primary)">Focus Next</p>
                 <p className="mt-2 text-sm font-bold text-white">{weakestSkill[0]}</p>
               </div>
             </div>
@@ -177,33 +177,33 @@ const Profile = () => {
 
         <div className="grid gap-6 xl:grid-cols-12">
           <section className="space-y-6 xl:col-span-7">
-            <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
+            <div className="rounded-[28px] border border-border-primary bg-bg-secondary/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-secondary)] text-[var(--accent-primary)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-(--accent-secondary) text-(--accent-primary)">
                   <Icon.Chart className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[var(--accent-primary)]">Mastery Snapshot</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-(--accent-primary)">Mastery Snapshot</p>
                   <h2 className="mt-1 text-xl font-black text-white">Skill profile overview</h2>
                 </div>
               </div>
 
               <div className="grid gap-6 lg:grid-cols-[minmax(280px,0.95fr)_minmax(0,1.05fr)]">
-                <div className="rounded-[24px] border border-white/10 bg-slate-950/60 p-4">
+                <div className="rounded-[24px] border border-border-primary bg-bg-secondary/60 p-4">
                   <MasteryRadar masteryProfile={masteryData} />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                   {masteryEntries.map(([label, value]) => (
-                    <div key={label} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+                    <div key={label} className="rounded-2xl border border-border-primary bg-bg-secondary/50 p-4">
                       <div className="mb-2 flex items-center justify-between text-[11px] font-black uppercase tracking-[0.24em]">
-                        <span className={normalizeMasteryScore(value) < 0.4 ? "text-amber-400" : "text-[var(--accent-primary)]"}>{label}</span>
-                        <span className="text-slate-400">{formatMasteryPercent(value)}</span>
+                        <span className={`cursor-help ${normalizeMasteryScore(value) < 0.4 ? "text-amber-400" : "text-(--accent-primary)"}`} title={label}>{label.replace(/_/g, " ")}</span>
+                        <span className="text-text-secondary">{formatMasteryPercent(value)}</span>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-slate-800">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: masteryWidth(value) }}
-                          className={`h-full rounded-full ${normalizeMasteryScore(value) < 0.4 ? "bg-amber-500" : "bg-[var(--accent-primary)]"}`}
+                          className={`h-full rounded-full ${normalizeMasteryScore(value) < 0.4 ? "bg-amber-500" : "bg-(--accent-primary)"}`}
                         />
                       </div>
                     </div>
@@ -212,7 +212,7 @@ const Profile = () => {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
+            <div className="rounded-[28px] border border-border-primary bg-bg-secondary/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-400">
                   <Icon.Flame className="h-6 w-6" />
@@ -224,18 +224,18 @@ const Profile = () => {
               </div>
 
               <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Current Streak</p>
+                <div className="rounded-2xl border border-border-primary bg-bg-secondary/50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-muted">Current Streak</p>
                   <p className="mt-2 text-2xl font-black text-white">{challengeState.streak}</p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Solved Today</p>
+                <div className="rounded-2xl border border-border-primary bg-bg-secondary/50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-muted">Solved Today</p>
                   <p className={`mt-2 text-sm font-bold ${challengeState.solvedToday ? "text-emerald-400" : "text-amber-400"}`}>
                     {challengeState.solvedToday ? "Completed" : "Pending"}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">Last Solve</p>
+                <div className="rounded-2xl border border-border-primary bg-bg-secondary/50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-muted">Last Solve</p>
                   <p className="mt-2 text-sm font-bold text-white">{challengeState.lastSolvedOn || "Not yet solved"}</p>
                 </div>
               </div>
@@ -243,33 +243,33 @@ const Profile = () => {
           </section>
 
           <aside className="space-y-6 xl:col-span-5 xl:sticky xl:top-24 self-start">
-            <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
+            <div className="rounded-[28px] border border-border-primary bg-bg-secondary/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-secondary)] text-[var(--accent-primary)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-(--accent-secondary) text-(--accent-primary)">
                   <Icon.Edit className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[var(--accent-primary)]">Profile Details</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-(--accent-primary)">Profile Details</p>
                   <h2 className="mt-1 text-xl font-black text-white">Update the essentials</h2>
                 </div>
               </div>
 
               <div className="space-y-5">
                 <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Display name</label>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-text-muted">Display name</label>
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <input
                       type="text"
                       value={displayName}
                       onChange={(event) => setDisplayName(event.target.value)}
-                      className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-[var(--accent-primary)]"
+                      className="min-w-0 flex-1 rounded-2xl border border-border-primary bg-bg-secondary/70 px-4 py-3 text-sm text-white outline-none transition-colors focus:border-(--accent-primary)"
                       placeholder="Enter your name..."
                     />
                     <button
                       type="button"
                       onClick={updateProfile}
                       disabled={loading}
-                      className="rounded-2xl bg-[var(--accent-primary)] px-5 py-3 text-sm font-semibold text-slate-950 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-2xl bg-(--accent-primary) px-5 py-3 text-sm font-semibold text-slate-950 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loading ? "Saving..." : "Save"}
                     </button>
@@ -277,21 +277,21 @@ const Profile = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Email</label>
-                  <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-400">
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-text-muted">Email</label>
+                  <div className="rounded-2xl border border-border-primary bg-bg-secondary/50 px-4 py-3 text-sm text-text-secondary">
                     {user?.email}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
+            <div className="rounded-[28px] border border-border-primary bg-bg-secondary/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-secondary)] text-[var(--accent-primary)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-(--accent-secondary) text-(--accent-primary)">
                   <Icon.Shield className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[var(--accent-primary)]">Quick Summary</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-(--accent-primary)">Quick Summary</p>
                   <h2 className="mt-1 text-xl font-black text-white">Only the useful profile info</h2>
                 </div>
               </div>
@@ -303,62 +303,62 @@ const Profile = () => {
                   { label: "Strongest Skill", value: strongestSkill[0] },
                   { label: "Needs Attention", value: weakestSkill[0] }
                 ].map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-500">{item.label}</p>
+                  <div key={item.label} className="rounded-2xl border border-border-primary bg-bg-secondary/50 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-muted">{item.label}</p>
                     <p className="mt-2 text-sm font-semibold text-white">{item.value}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
+            <div className="rounded-[28px] border border-border-primary bg-bg-secondary/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-secondary)] text-[var(--accent-primary)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-(--accent-secondary) text-(--accent-primary)">
                   <Icon.Zap className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[var(--accent-primary)]">Quick Actions</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-(--accent-primary)">Quick Actions</p>
                   <h2 className="mt-1 text-xl font-black text-white">Jump back into learning</h2>
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <button type="button" onClick={() => navigate("/daily-challenge")} className="rounded-2xl bg-[var(--accent-primary)] px-4 py-3 text-sm font-semibold text-slate-950 transition-opacity hover:opacity-90">
+                <button type="button" onClick={() => navigate("/daily-challenge")} className="rounded-2xl bg-(--accent-primary) px-4 py-3 text-sm font-semibold text-slate-950 transition-opacity hover:opacity-90">
                   Open Daily Challenge
                 </button>
                 <button type="button" onClick={() => navigate("/dashboard")} className="rounded-2xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/15">
                   Go to Dashboard
                 </button>
-                <button type="button" onClick={() => navigate("/settings")} className="rounded-2xl bg-slate-950/70 px-4 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-800 sm:col-span-2">
+                <button type="button" onClick={() => navigate("/settings")} className="rounded-2xl bg-bg-secondary/70 px-4 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-slate-800 sm:col-span-2">
                   Open Settings
                 </button>
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-white/10 bg-slate-900/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
+            <div className="rounded-[28px] border border-border-primary bg-bg-secondary/70 p-7 shadow-[0_24px_70px_rgba(2,6,23,0.5)]">
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-secondary)] text-[var(--accent-primary)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-(--accent-secondary) text-(--accent-primary)">
                   <Icon.CheckCircle className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[var(--accent-primary)]">Recent Milestones</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.28em] text-(--accent-primary)">Recent Milestones</p>
                   <h2 className="mt-1 text-xl font-black text-white">Latest learning wins</h2>
                 </div>
               </div>
 
               <div className="space-y-4">
                 {recentMilestones.length > 0 ? recentMilestones.map((item) => (
-                  <div key={`${item.title}-${item.time}`} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+                  <div key={`${item.title}-${item.time}`} className="rounded-2xl border border-border-primary bg-bg-secondary/50 p-4">
                     <div className="flex items-start gap-3">
                       <div className={`text-lg ${item.color}`}>{item.icon}</div>
                       <div>
                         <p className="text-sm font-semibold text-white">{item.title}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-500">{item.time}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.22em] text-text-muted">{item.time}</p>
                       </div>
                     </div>
                   </div>
                 )) : (
-                  <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-sm text-slate-400">
+                  <div className="rounded-2xl border border-border-primary bg-bg-secondary/50 p-4 text-sm text-text-secondary">
                     Complete an assessment or daily challenge to start building your milestone history.
                   </div>
                 )}
@@ -373,7 +373,7 @@ const Profile = () => {
                 <div className="flex-1">
                   <p className="text-[11px] font-black uppercase tracking-[0.28em] text-rose-400">Session Control</p>
                   <h2 className="mt-2 text-xl font-black text-white">Sign out safely</h2>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">Leave the workspace without carrying the extra placeholder settings that used to clutter this page.</p>
+                  <p className="mt-2 text-sm leading-7 text-text-secondary">Leave the workspace without carrying the extra placeholder settings that used to clutter this page.</p>
                   <button
                     type="button"
                     onClick={handleSignOut}

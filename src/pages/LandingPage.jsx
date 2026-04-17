@@ -19,7 +19,7 @@ const LandingPage = () => {
   });
 
   return (
-    <div className="bg-[#050B14] text-white min-h-screen overflow-x-hidden relative selection:bg-cyan-500/30">
+    <div className="bg-bg-primary text-text-primary min-h-screen overflow-x-hidden relative selection:bg-cyan-500/30">
       
       {/* Scroll Progress Bar */}
       <motion.div
