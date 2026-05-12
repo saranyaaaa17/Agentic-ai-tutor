@@ -3,7 +3,9 @@ fastapi
 uvicorn
 python-dotenv
 groq
+openai
 pydantic
 langchain
 langchain-groq
 langchain-core
+httpx
