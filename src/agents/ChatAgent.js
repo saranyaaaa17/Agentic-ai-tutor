@@ -2,6 +2,8 @@
  * Chat Agent (Frontend Wrapper)
  * Responsibility: Interface with the general /api/chat endpoint.
  */
+import { buildApiUrl } from "../lib/api";
+
 export const ChatAgent = {
     /**
      * Sends a message to the AI Tutor and gets a response.
@@ -11,7 +13,7 @@ export const ChatAgent = {
      */
     async sendMessage(message, history = []) {
         try {
-            const response = await fetch('/api/chat', {
+            const response = await fetch(buildApiUrl('/api/chat'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message, history })

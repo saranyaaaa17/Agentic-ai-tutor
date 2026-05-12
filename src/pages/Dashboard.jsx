@@ -8,6 +8,7 @@ import { fetchMasteryFromSupabase, normalizeMasteryScore } from "../utils/syncUt
 import { companyConfig } from "../lib/companyConfig";
 import { getDailyChallengeCard } from "../utils/dailyChallenge";
 import { getLearningVelocityData, getRecentMilestones } from "../utils/learningActivity";
+import { buildApiUrl } from "../lib/api";
 
 /* Reusable SVG icon components */
 const Icon = {
@@ -316,6 +317,7 @@ const Dashboard = () => {
 
   const initial = (user?.user_metadata?.display_name || user?.email || "?").charAt(0).toUpperCase();
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "Learner";
+   const isGuestUser = Boolean(user?.is_guest);
 
   const handleSignOut = async () => {
     try {
@@ -362,6 +364,17 @@ const Dashboard = () => {
       );
 
   useEffect(() => {
+      if (!user || user?.is_guest) {
+         setAgentStatus({
+            coordinator: user?.is_guest ? "guest" : "connecting...",
+            tutor: user?.is_guest ? "guest" : "connecting...",
+            curator: user?.is_guest ? "guest" : "connecting...",
+            evaluator: user?.is_guest ? "guest" : "connecting...",
+            memory: user?.is_guest ? "guest" : "connecting..."
+         });
+         return;
+      }
+
     const initData = async () => {
         let profileData = { 
             "Logic": 0.0, 
@@ -391,7 +404,7 @@ const Dashboard = () => {
 
     const pollStatus = async () => {
         try {
-            const resp = await fetch("/api/status");
+         const resp = await fetch(buildApiUrl("/api/status"));
             const data = await resp.json();
             if (data.agents) setAgentStatus({ coordinator: "online", ...data.agents });
         } catch (_) {
@@ -615,7 +628,7 @@ const Dashboard = () => {
               </div>
               <div className="flex-1 min-w-0">
                  <div className="text-sm font-bold text-text-primary truncate">{displayName}</div>
-                 <div className="text-[10px] text-text-muted truncate group-hover/profile:text-accent-primary transition-colors uppercase font-black">Pro Member</div>
+                 <div className="text-[10px] text-text-muted truncate group-hover/profile:text-accent-primary transition-colors uppercase font-black">{isGuestUser ? "Guest Session" : "Pro Member"}</div>
               </div>
            </button>
            <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-text-muted hover:text-rose-400 hover:bg-rose-400/5 transition-all text-[10px] font-black uppercase tracking-widest">
@@ -704,6 +717,19 @@ const Dashboard = () => {
                       <div>
                          <h1 className="text-4xl font-black text-white mb-2 tracking-tight">Welcome, {displayName}!</h1>
                          <p className="text-text-secondary font-medium">Your personalized learning platform starts here.</p>
+                                     {isGuestUser && (
+                                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                                           <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-amber-300">
+                                              Guest Mode
+                                           </span>
+                                           <button
+                                              onClick={() => navigate("/signup")}
+                                              className="rounded-full bg-accent-primary px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 transition-opacity hover:opacity-90"
+                                           >
+                                              Upgrade Account
+                                           </button>
+                                        </div>
+                                     )}
                       </div>
                    </div>
 

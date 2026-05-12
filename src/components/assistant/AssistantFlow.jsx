@@ -194,7 +194,7 @@ const AssistantFlow = () => {
       setMessages(prev => [...prev, { role: "assistant", text: initialFlow[nextStep].question }]);
     } else {
       // Save Profile
-      if (user) {
+      if (user && !user?.is_guest) {
         await supabase.from("profiles").update({ interests_completed: true }).eq("id", user.id);
       }
 

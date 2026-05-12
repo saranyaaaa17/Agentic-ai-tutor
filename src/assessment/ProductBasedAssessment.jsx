@@ -10,6 +10,7 @@ import { getRandomFact } from "../data/learningFacts";
 import { TeacherAgent } from "../agents/TeacherAgent";
 import AgentSystemPanel from "../components/agents/AgentSystemPanel";
 import { ensureQuestionHints } from "../utils/questionEnhancers";
+import { buildApiUrl } from "../lib/api";
 
 const ProductBasedAssessment = () => {
   const { user } = useAuth();
@@ -240,7 +241,7 @@ const ProductBasedAssessment = () => {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
 
-        const response = await fetch('/api/generate-adaptive-practice', {
+        const response = await fetch(buildApiUrl('/api/generate-adaptive-practice'), {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',

@@ -12,7 +12,7 @@ const FloatingAssistant = () => {
   const [activeTab, setActiveTab] = useState("chat"); // Default back to Diagnostic Chat
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || user?.is_guest) return;
     const fetchProfile = async () => {
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       if (data) setProfile(data);

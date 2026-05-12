@@ -1,5 +1,7 @@
 import { supabase } from "../lib/supabase";
 
+const isGuestUserId = (userId) => typeof userId === "string" && userId.startsWith("guest-");
+
 const normalizeMasteryScore = (score) => {
     const numericScore = Number(score);
 
@@ -15,7 +17,7 @@ const normalizeMasteryScore = (score) => {
  * Upserts mastery scores for specific concepts.
  */
 export const syncMasteryToSupabase = async (userId, results) => {
-    if (!userId || !results || !results.mastery_profile) return;
+    if (!userId || !results || !results.mastery_profile || isGuestUserId(userId)) return;
 
     try {
         console.log("[Sync] 🔄 Syncing mastery to Supabase...");
@@ -48,7 +50,7 @@ export const syncMasteryToSupabase = async (userId, results) => {
  * Fetches mastery data from Supabase for the current user.
  */
 export const fetchMasteryFromSupabase = async (userId) => {
-    if (!userId) return null;
+    if (!userId || isGuestUserId(userId)) return null;
 
     try {
         const { data, error } = await supabase

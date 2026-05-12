@@ -7,7 +7,7 @@ import BackButton from "../components/ui/BackButton";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { user, signInWithGoogle } = useAuth();
+  const { user, signInWithGoogle, signInAsGuest } = useAuth();
   const [authMethod, setAuthMethod] = useState("email"); // 'email' | 'phone'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,6 +45,19 @@ const Login = () => {
     setError(null);
     const { error } = await signInWithGoogle();
     if (error) setError(error.message);
+    setLoading(false);
+  };
+
+  const handleGuestLogin = () => {
+    setLoading(true);
+    setError(null);
+    const { error } = signInAsGuest();
+    if (error) {
+      setError(error.message || "Unable to start guest session");
+      setLoading(false);
+      return;
+    }
+    navigate("/dashboard");
     setLoading(false);
   };
 
@@ -155,6 +168,14 @@ const Login = () => {
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                    </svg>
                    Continue with Google
+                 </button>
+
+                 <button
+                    onClick={handleGuestLogin}
+                    disabled={loading}
+                    className="w-full bg-slate-800/80 border border-slate-600 text-white font-bold py-3.5 rounded-xl hover:bg-slate-700 transition-all flex items-center justify-center gap-3 mb-2"
+                 >
+                   Continue as Guest
                  </button>
 
                  <div className="relative flex py-5 items-center">

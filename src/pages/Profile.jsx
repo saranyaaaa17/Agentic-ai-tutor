@@ -73,6 +73,7 @@ const Profile = () => {
 
   const initial = (displayName || user?.email || "?").charAt(0).toUpperCase();
   const userName = displayName || user?.email?.split("@")[0] || "Learner";
+  const isGuestUser = Boolean(user?.is_guest);
   const masteryEntries = Object.entries(masteryData);
   const strongestSkill = useMemo(
     () => masteryEntries.reduce((best, current) => normalizeMasteryScore(current[1]) > normalizeMasteryScore(best[1]) ? current : best, masteryEntries[0] || ["None", 0]),
@@ -155,6 +156,20 @@ const Profile = () => {
                 <p className="text-[11px] font-black uppercase tracking-[0.32em] text-(--accent-primary)">Learner Profile</p>
                 <h1 className="mt-2 text-4xl font-black tracking-tight text-white">{userName}</h1>
                 <p className="mt-2 text-sm text-text-secondary">{user?.email}</p>
+                {isGuestUser && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <span className="inline-flex rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-amber-300">
+                      Guest Session
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/signup")}
+                      className="rounded-full bg-(--accent-primary) px-4 py-2 text-xs font-black uppercase tracking-wider text-slate-950 transition-opacity hover:opacity-90"
+                    >
+                      Upgrade Account
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -268,12 +283,15 @@ const Profile = () => {
                     <button
                       type="button"
                       onClick={updateProfile}
-                      disabled={loading}
+                      disabled={loading || isGuestUser}
                       className="rounded-2xl bg-(--accent-primary) px-5 py-3 text-sm font-semibold text-slate-950 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {loading ? "Saving..." : "Save"}
+                      {isGuestUser ? "Upgrade to Edit" : loading ? "Saving..." : "Save"}
                     </button>
                   </div>
+                  {isGuestUser && (
+                    <p className="mt-2 text-xs text-amber-300/90">Guest profiles are temporary. Upgrade your account to save profile changes.</p>
+                  )}
                 </div>
 
                 <div>

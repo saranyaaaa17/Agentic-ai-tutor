@@ -1,19 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import Logo from "./logo";
 
 const Navbar = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
+  const isGuestUser = Boolean(user?.is_guest);
 
   const initial = (user?.user_metadata?.display_name || user?.email)?.charAt(0).toUpperCase();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     setOpenMenu(false);
   };
 
@@ -121,6 +121,11 @@ const Navbar = () => {
                                 <p className="text-xs text-slate-400 truncate font-medium">
                                   {user.email}
                                 </p>
+                                {isGuestUser && (
+                                  <span className="mt-1 inline-flex rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-300">
+                                    Guest Session
+                                  </span>
+                                )}
                             </div>
                         </div>
                       </div>
@@ -177,12 +182,12 @@ const Navbar = () => {
                            Help & Support
                         </Link>
 
-                        <button className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3 group">
+                        <Link to="/signup" onClick={() => setOpenMenu(false)} className="w-full text-left px-3 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors flex items-center gap-3 group">
                            <svg className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                            </svg>
-                           Add Account
-                        </button>
+                          {isGuestUser ? "Upgrade Account" : "Add Account"}
+                        </Link>
                       </div>
 
                       <div className="p-2 border-t border-white/5">

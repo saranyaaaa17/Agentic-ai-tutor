@@ -55,6 +55,7 @@ const Settings = () => {
   const { resolvedTheme, appearance, setAppearance, accentColor, setAccentColor, language, setLanguage, spokenLanguage, setSpokenLanguage, socraticMode, setSocraticMode } = useSettings();
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const isGuestUser = Boolean(user?.is_guest);
   const [activeSection, setActiveSection] = useState("general");
   const contentRef = useRef(null);
 
@@ -296,6 +297,11 @@ const Settings = () => {
                       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-secondary)] text-[var(--accent-primary)]"><Icon.User className="h-6 w-6" /></div>
                       <p className={`text-xs uppercase tracking-[0.24em] ${muteClass}`}>Signed in as</p>
                       <p className="mt-2 break-all text-lg font-bold">{user?.email || "No active user"}</p>
+                      {isGuestUser && (
+                        <span className="mt-3 inline-flex rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">
+                          Guest Session
+                        </span>
+                      )}
                     </div>
                     <div className={`rounded-2xl border p-5 ${chipClass}`}>
                       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-secondary)] text-[var(--accent-primary)]"><Icon.Grid className="h-6 w-6" /></div>
@@ -303,6 +309,9 @@ const Settings = () => {
                       <div className="mt-3 flex flex-wrap gap-3">
                         <button type="button" onClick={() => navigate("/dashboard")} className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${resolvedTheme === "light" ? "bg-slate-900 text-white hover:bg-slate-800" : "bg-white/10 text-white hover:bg-white/15"}`}>Open Dashboard</button>
                         <button type="button" onClick={() => navigate("/profile")} className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${resolvedTheme === "light" ? "bg-slate-100 text-slate-700 hover:bg-slate-200" : "bg-slate-950/70 text-slate-300 hover:bg-slate-800"}`}>Open Profile</button>
+                        {isGuestUser && (
+                          <button type="button" onClick={() => navigate("/signup")} className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${resolvedTheme === "light" ? "bg-amber-500 text-slate-950 hover:bg-amber-400" : "bg-amber-400 text-slate-950 hover:bg-amber-300"}`}>Upgrade Account</button>
+                        )}
                       </div>
                     </div>
                   </div>
